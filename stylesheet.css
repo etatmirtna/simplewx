@@ -1,0 +1,49 @@
+.simplewx-container {
+    padding: 8px;
+    spacing: 4px;
+}
+
+.simplewx-nav-row {
+    spacing: 6px;
+}
+
+.simplewx-nav-btn {
+    font-size: 11px;
+    padding: 2px 6px;
+    color: #aaaaaa;
+    border: none;
+    background: transparent;
+}
+
+.simplewx-nav-btn:hover {
+    color: #ffffff;
+}
+
+.simplewx-location {
+    font-size: 11px;
+    color: #cccccc;
+    text-align: center;
+}
+
+.simplewx-icon {
+    padding-top: 4px;
+}
+
+.simplewx-temp {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ffffff;
+    text-align: center;
+}
+
+.simplewx-condition {
+    font-size: 12px;
+    color: #dddddd;
+    text-align: center;
+}
+
+.simplewx-wind {
+    font-size: 10px;
+    color: #aaaaaa;
+    text-align: center;
+}

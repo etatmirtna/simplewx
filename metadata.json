@@ -1,0 +1,8 @@
+{
+  "uuid": "simplewx@wd8ta",
+  "name": "SimpleWx",
+  "description": "Simple weather desklet using NWS data",
+  "version": "1.0",
+  "author": "WD8TA",
+  "max-instances": "1"
+}

@@ -1,0 +1,54 @@
+{
+    "use-geolocation": {
+        "type": "checkbox",
+        "default": true,
+        "description": "Auto-detect current location on startup",
+        "tooltip": "Uses IP-based geolocation. Falls back to your default favorite if unavailable."
+    },
+    "units": {
+        "type": "combobox",
+        "default": "F",
+        "description": "Temperature Units",
+        "options": {
+            "Fahrenheit (°F)": "F",
+            "Celsius (°C)": "C"
+        }
+    },
+    "refresh-interval": {
+        "type": "spinbutton",
+        "default": 30,
+        "min": 10,
+        "max": 120,
+        "step": 5,
+        "units": "minutes",
+        "description": "Refresh Interval"
+    },
+    "default-favorite": {
+        "type": "spinbutton",
+        "default": 1,
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "description": "Default Favorite (1-5)",
+        "tooltip": "Which favorite to use when geolocation is off or unavailable"
+    },
+    "fav1-name": { "type": "entry", "default": "Columbus, OH", "description": "Favorite 1 — Name" },
+    "fav1-lat":  { "type": "entry", "default": "39.9612",      "description": "Favorite 1 — Latitude" },
+    "fav1-lon":  { "type": "entry", "default": "-82.9988",     "description": "Favorite 1 — Longitude" },
+
+    "fav2-name": { "type": "entry", "default": "", "description": "Favorite 2 — Name" },
+    "fav2-lat":  { "type": "entry", "default": "", "description": "Favorite 2 — Latitude" },
+    "fav2-lon":  { "type": "entry", "default": "", "description": "Favorite 2 — Longitude" },
+
+    "fav3-name": { "type": "entry", "default": "", "description": "Favorite 3 — Name" },
+    "fav3-lat":  { "type": "entry", "default": "", "description": "Favorite 3 — Latitude" },
+    "fav3-lon":  { "type": "entry", "default": "", "description": "Favorite 3 — Longitude" },
+
+    "fav4-name": { "type": "entry", "default": "", "description": "Favorite 4 — Name" },
+    "fav4-lat":  { "type": "entry", "default": "", "description": "Favorite 4 — Latitude" },
+    "fav4-lon":  { "type": "entry", "default": "", "description": "Favorite 4 — Longitude" },
+
+    "fav5-name": { "type": "entry", "default": "", "description": "Favorite 5 — Name" },
+    "fav5-lat":  { "type": "entry", "default": "", "description": "Favorite 5 — Latitude" },
+    "fav5-lon":  { "type": "entry", "default": "", "description": "Favorite 5 — Longitude" }
+}
