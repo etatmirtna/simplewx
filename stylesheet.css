@@ -1,16 +1,18 @@
 .simplewx-container {
-    padding: 8px;
+    padding: 10px;
     spacing: 4px;
+    min-width: 240px;
 }
 
+/* ── Nav row ── */
 .simplewx-nav-row {
-    spacing: 6px;
+    spacing: 4px;
 }
 
 .simplewx-nav-btn {
     font-size: 11px;
     padding: 2px 6px;
-    color: #aaaaaa;
+    color: #888888;
     border: none;
     background: transparent;
 }
@@ -25,25 +27,131 @@
     text-align: center;
 }
 
+/* ── Current conditions ── */
 .simplewx-icon {
     padding-top: 4px;
 }
 
+.simplewx-temp-row {
+    spacing: 6px;
+}
+
 .simplewx-temp {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     color: #ffffff;
-    text-align: center;
+}
+
+.simplewx-info-btn {
+    font-size: 14px;
+    color: #88aaff;
+    border: none;
+    background: transparent;
+    padding: 0 4px;
+}
+
+.simplewx-info-btn:hover {
+    color: #ffffff;
 }
 
 .simplewx-condition {
     font-size: 12px;
     color: #dddddd;
-    text-align: center;
 }
 
 .simplewx-wind {
     font-size: 10px;
+    color: #999999;
+}
+
+/* ── Detailed forecast popup ── */
+.simplewx-popup {
+    padding: 6px;
+    margin-top: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+.simplewx-popup-text {
+    font-size: 11px;
+    color: #dddddd;
+    max-width: 220px;
+}
+
+/* ── Divider ── */
+.simplewx-divider {
+    margin-top: 6px;
+    margin-bottom: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    min-height: 1px;
+    min-width: 220px;
+}
+
+/* ── 7-day forecast strip ── */
+.simplewx-forecast-section {
+    spacing: 2px;
+}
+
+.simplewx-forecast-row {
+    spacing: 0px;
+}
+
+.simplewx-day-cell {
+    min-width: 32px;
+    padding: 2px 4px;
+    spacing: 2px;
+}
+
+.simplewx-day-name {
+    font-size: 9px;
     color: #aaaaaa;
     text-align: center;
+}
+
+.simplewx-day-icon {}
+
+.simplewx-day-temp {
+    font-size: 10px;
+    color: #ffffff;
+    text-align: center;
+}
+
+/* ── Space weather section ── */
+.simplewx-spacewx-section {
+    spacing: 2px;
+}
+
+.simplewx-spacewx-row {
+    spacing: 16px;
+    padding-top: 4px;
+}
+
+.simplewx-spacewx-block {
+    spacing: 2px;
+}
+
+.simplewx-spacewx-hdr {
+    font-size: 9px;
+    color: #888888;
+    text-transform: uppercase;
+}
+
+.simplewx-kindex {
+    font-size: 18px;
+    font-weight: bold;
+    color: #44cc44;
+    /* overridden at runtime */
+}
+
+.simplewx-geostate {
+    font-size: 9px;
+    color: #44cc44;
+    /* overridden at runtime */
+}
+
+.simplewx-sfi {
+    font-size: 18px;
+    font-weight: bold;
+    color: #44cc44;
+    /* overridden at runtime */
 }

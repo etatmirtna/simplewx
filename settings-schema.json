@@ -32,23 +32,85 @@
         "description": "Default Favorite (1-5)",
         "tooltip": "Which favorite to use when geolocation is off or unavailable"
     },
-    "fav1-name": { "type": "entry", "default": "Columbus, OH", "description": "Favorite 1 — Name" },
-    "fav1-lat":  { "type": "entry", "default": "39.9612",      "description": "Favorite 1 — Latitude" },
-    "fav1-lon":  { "type": "entry", "default": "-82.9988",     "description": "Favorite 1 — Longitude" },
-
-    "fav2-name": { "type": "entry", "default": "", "description": "Favorite 2 — Name" },
-    "fav2-lat":  { "type": "entry", "default": "", "description": "Favorite 2 — Latitude" },
-    "fav2-lon":  { "type": "entry", "default": "", "description": "Favorite 2 — Longitude" },
-
-    "fav3-name": { "type": "entry", "default": "", "description": "Favorite 3 — Name" },
-    "fav3-lat":  { "type": "entry", "default": "", "description": "Favorite 3 — Latitude" },
-    "fav3-lon":  { "type": "entry", "default": "", "description": "Favorite 3 — Longitude" },
-
-    "fav4-name": { "type": "entry", "default": "", "description": "Favorite 4 — Name" },
-    "fav4-lat":  { "type": "entry", "default": "", "description": "Favorite 4 — Latitude" },
-    "fav4-lon":  { "type": "entry", "default": "", "description": "Favorite 4 — Longitude" },
-
-    "fav5-name": { "type": "entry", "default": "", "description": "Favorite 5 — Name" },
-    "fav5-lat":  { "type": "entry", "default": "", "description": "Favorite 5 — Latitude" },
-    "fav5-lon":  { "type": "entry", "default": "", "description": "Favorite 5 — Longitude" }
+    "show-space-wx": {
+        "type": "checkbox",
+        "default": true,
+        "description": "Show Ham Radio Space Weather (K-index, SFI)",
+        "tooltip": "Displays real-time K-index, Solar Flux Index and geomagnetic state from NOAA SWPC"
+    },
+    "fav1-name": {
+        "type": "entry",
+        "default": "Columbus, OH",
+        "description": "Favorite 1 — Name"
+    },
+    "fav1-lat": {
+        "type": "entry",
+        "default": "39.9612",
+        "description": "Favorite 1 — Latitude"
+    },
+    "fav1-lon": {
+        "type": "entry",
+        "default": "-82.9988",
+        "description": "Favorite 1 — Longitude"
+    },
+    "fav2-name": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 2 — Name"
+    },
+    "fav2-lat": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 2 — Latitude"
+    },
+    "fav2-lon": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 2 — Longitude"
+    },
+    "fav3-name": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 3 — Name"
+    },
+    "fav3-lat": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 3 — Latitude"
+    },
+    "fav3-lon": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 3 — Longitude"
+    },
+    "fav4-name": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 4 — Name"
+    },
+    "fav4-lat": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 4 — Latitude"
+    },
+    "fav4-lon": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 4 — Longitude"
+    },
+    "fav5-name": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 5 — Name"
+    },
+    "fav5-lat": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 5 — Latitude"
+    },
+    "fav5-lon": {
+        "type": "entry",
+        "default": "",
+        "description": "Favorite 5 — Longitude"
+    }
 }
