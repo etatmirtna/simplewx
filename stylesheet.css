@@ -1,7 +1,30 @@
 .simplewx-container {
     padding: 10px;
     spacing: 4px;
-    min-width: 240px;
+    min-width: 260px;
+}
+
+/* ── Header ── */
+.simplewx-header-row {
+    spacing: 0px;
+    padding-bottom: 4px;
+}
+
+.simplewx-header-title {
+    font-size: 12px;
+    color: #aaaaaa;
+}
+
+.simplewx-header-link {
+    font-size: 12px;
+    color: #88aaff;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.simplewx-header-link:hover {
+    color: #ffffff;
 }
 
 /* ── Nav row ── */
@@ -10,7 +33,7 @@
 }
 
 .simplewx-nav-btn {
-    font-size: 11px;
+    font-size: 12px;
     padding: 2px 6px;
     color: #888888;
     border: none;
@@ -22,7 +45,7 @@
 }
 
 .simplewx-location {
-    font-size: 11px;
+    font-size: 18px;
     color: #cccccc;
     text-align: center;
 }
@@ -42,6 +65,12 @@
     color: #ffffff;
 }
 
+.simplewx-hilo {
+    font-size: 14px;
+    color: #aaddff;
+    padding-top: 10px;
+}
+
 .simplewx-info-btn {
     font-size: 14px;
     color: #88aaff;
@@ -55,27 +84,65 @@
 }
 
 .simplewx-condition {
-    font-size: 12px;
+    font-size: 16px;
     color: #dddddd;
 }
 
+.simplewx-wind-row {
+    spacing: 2px;
+}
+
+.simplewx-wind-arrow {
+    font-size: 14px;
+    color: #aaddff;
+}
+
 .simplewx-wind {
-    font-size: 10px;
+    font-size: 12px;
     color: #999999;
+}
+
+.simplewx-press-row {
+    spacing: 4px;
+    padding-top: 2px;
+}
+
+.simplewx-pressure {
+    font-size: 12px;
+    color: #aaaaaa;
+}
+
+.simplewx-pressure-trend {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.simplewx-sun-row {
+    spacing: 2px;
+    padding-top: 2px;
+}
+
+.simplewx-sun {
+    font-size: 12px;
+    color: #ffcc44;
 }
 
 /* ── Detailed forecast popup ── */
 .simplewx-popup {
     padding: 6px;
     margin-top: 4px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.55);
     border-radius: 4px;
 }
 
+.simplewx-attr-popup {
+    max-height: 200px;
+}
+
 .simplewx-popup-text {
-    font-size: 11px;
+    font-size: 12px;
     color: #dddddd;
-    max-width: 220px;
+    max-width: 240px;
 }
 
 /* ── Divider ── */
@@ -84,7 +151,16 @@
     margin-bottom: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     min-height: 1px;
-    min-width: 220px;
+    min-width: 240px;
+}
+
+/* ── Section headers ── */
+.simplewx-section-hdr {
+    font-size: 18px;
+    color: #aaaaaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 4px;
 }
 
 /* ── 7-day forecast strip ── */
@@ -97,22 +173,26 @@
 }
 
 .simplewx-day-cell {
-    min-width: 32px;
-    padding: 2px 4px;
-    spacing: 2px;
+    min-width: 34px;
+    padding: 2px 3px;
+    spacing: 1px;
 }
 
 .simplewx-day-name {
-    font-size: 9px;
+    font-size: 12px;
     color: #aaaaaa;
     text-align: center;
 }
 
-.simplewx-day-icon {}
+.simplewx-day-hilo {
+    font-size: 12px;
+    color: #aaddff;
+    text-align: center;
+}
 
-.simplewx-day-temp {
-    font-size: 10px;
-    color: #ffffff;
+.simplewx-day-wind {
+    font-size: 12px;
+    color: #888888;
     text-align: center;
 }
 
@@ -122,7 +202,7 @@
 }
 
 .simplewx-spacewx-row {
-    spacing: 16px;
+    spacing: 14px;
     padding-top: 4px;
 }
 
@@ -131,8 +211,8 @@
 }
 
 .simplewx-spacewx-hdr {
-    font-size: 9px;
-    color: #888888;
+    font-size: 18px;
+    color: #666666;
     text-transform: uppercase;
 }
 
@@ -140,56 +220,80 @@
     font-size: 18px;
     font-weight: bold;
     color: #44cc44;
-    /* overridden at runtime */
 }
 
 .simplewx-geostate {
-    font-size: 9px;
+    font-size: 12px;
     color: #44cc44;
-    /* overridden at runtime */
 }
 
 .simplewx-sfi {
     font-size: 18px;
     font-weight: bold;
     color: #44cc44;
-    /* overridden at runtime */
 }
 
-/* ── X-ray / Solar wind ── */
 .simplewx-xray {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #44cc44;
 }
 
 .simplewx-solwind {
-    font-size: 12px;
+    font-size: 18px;
     font-weight: bold;
     color: #44cc44;
 }
 
-/* ── Band conditions ── */
+/* ── Band conditions section ── */
+.simplewx-band-section {
+    spacing: 2px;
+}
+
 .simplewx-band-row {
     spacing: 2px;
     padding-top: 4px;
 }
 
 .simplewx-band-cell {
-    min-width: 36px;
+    min-width: 48px;
     padding: 2px 3px;
     spacing: 2px;
+    font-size: 12px;
 }
 
 .simplewx-band-name {
-    font-size: 9px;
+    font-size: 16px;
     color: #888888;
     text-align: center;
 }
 
 .simplewx-band-cond {
-    font-size: 9px;
+    font-size: 16px;
     font-weight: bold;
     text-align: center;
     color: #44cc44;
+}
+
+/* ── Footer ── */
+.simplewx-footer-row {
+    spacing: 0px;
+    padding-top: 6px;
+}
+
+.simplewx-footer-text {
+    font-size: 10px;
+    color: #666666;
+}
+
+.simplewx-footer-link {
+    font-size: 10px;
+    color: #6688aa;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.simplewx-footer-link:hover {
+    color: #aabbdd;
 }

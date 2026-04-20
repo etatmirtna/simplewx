@@ -3,7 +3,7 @@
         "type": "checkbox",
         "default": true,
         "description": "Auto-detect current location on startup",
-        "tooltip": "Uses IP-based geolocation. Falls back to your default favorite if unavailable."
+        "tooltip": "Uses IP-based geolocation. Falls back to default favorite if unavailable."
     },
     "units": {
         "type": "combobox",
@@ -21,7 +21,7 @@
         "max": 120,
         "step": 5,
         "units": "minutes",
-        "description": "Refresh Interval"
+        "description": "Weather Refresh Interval"
     },
     "default-favorite": {
         "type": "spinbutton",
@@ -30,13 +30,25 @@
         "max": 5,
         "step": 1,
         "description": "Default Favorite (1-5)",
-        "tooltip": "Which favorite to use when geolocation is off or unavailable"
+        "tooltip": "Which favorite to show when geolocation is off or unavailable"
     },
     "show-space-wx": {
         "type": "checkbox",
         "default": true,
-        "description": "Show Ham Radio Space Weather (K-index, SFI)",
-        "tooltip": "Displays real-time K-index, Solar Flux Index and geomagnetic state from NOAA SWPC"
+        "description": "Show Space Weather section",
+        "tooltip": "Displays K-index, SFI, X-ray flux, solar wind from NOAA SWPC"
+    },
+    "show-band-conditions": {
+        "type": "checkbox",
+        "default": true,
+        "description": "Show Band Conditions section",
+        "tooltip": "Displays HF/VHF band condition estimates derived from K-index and SFI"
+    },
+    "show-7day": {
+        "type": "checkbox",
+        "default": true,
+        "description": "Show 7-Day Forecast strip",
+        "tooltip": "When hidden the desklet collapses to current conditions only"
     },
     "fav1-name": {
         "type": "entry",
@@ -45,27 +57,27 @@
     },
     "fav1-lat": {
         "type": "entry",
-        "default": "39.9612",
+        "default": "39.9833",
         "description": "Favorite 1 — Latitude"
     },
     "fav1-lon": {
         "type": "entry",
-        "default": "-82.9988",
+        "default": "-82.9833",
         "description": "Favorite 1 — Longitude"
     },
     "fav2-name": {
         "type": "entry",
-        "default": "",
+        "default": "Reynoldsburg, OH",
         "description": "Favorite 2 — Name"
     },
     "fav2-lat": {
         "type": "entry",
-        "default": "",
+        "default": "39.9548",
         "description": "Favorite 2 — Latitude"
     },
     "fav2-lon": {
         "type": "entry",
-        "default": "",
+        "default": "-82.8121",
         "description": "Favorite 2 — Longitude"
     },
     "fav3-name": {

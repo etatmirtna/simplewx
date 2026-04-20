@@ -1,0 +1,43 @@
+{
+    "attributions": [
+        {
+            "category": "Weather Icons",
+            "items": [
+                {
+                    "name": "Placeholder icon set name",
+                    "author": "Placeholder author",
+                    "source": "https://placeholder.url",
+                    "license": "Placeholder license"
+                }
+            ]
+        },
+        {
+            "category": "Weather Data",
+            "items": [
+                {
+                    "name": "National Weather Service API",
+                    "author": "NOAA / NWS",
+                    "source": "https://www.weather.gov/documentation/services-web-api",
+                    "license": "Public Domain"
+                },
+                {
+                    "name": "IP Geolocation",
+                    "author": "ip-api.com",
+                    "source": "http://ip-api.com",
+                    "license": "Free for non-commercial use"
+                }
+            ]
+        },
+        {
+            "category": "Space Weather Data",
+            "items": [
+                {
+                    "name": "NOAA Space Weather Prediction Center",
+                    "author": "NOAA SWPC",
+                    "source": "https://www.swpc.noaa.gov",
+                    "license": "Public Domain"
+                }
+            ]
+        }
+    ]
+}

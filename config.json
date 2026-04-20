@@ -1,0 +1,10 @@
+{
+    "endpoints": {
+        "geolocation":   "http://ip-api.com/json/",
+        "nws_points":    "https://api.weather.gov/points/{lat},{lon}",
+        "noaa_kindex":   "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
+        "noaa_flux":     "https://services.swpc.noaa.gov/products/summary/10cm-flux.json",
+        "noaa_xray":     "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json",
+        "noaa_wind":     "https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json"
+    }
+}
