@@ -7,6 +7,8 @@ const Pango = imports.gi.Pango;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 
+const NOAA_XRAY_URL = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json';
+const NOAA_WIND_URL = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json';
 const GEOLOCATION_URL = 'http://ip-api.com/json/';
 const NOAA_KINDEX_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json';
 const NOAA_FLUX_URL = 'https://services.swpc.noaa.gov/products/summary/10cm-flux.json';
@@ -48,6 +50,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._usingGeolocation = false;
         this._popupVisible = false;
         this._detailedForecast = '';
+        this._currentKp = 0;
+        this._currentSfi = 0;
 
         this._bindSettings(metadata, desklet_id);
         this._buildUI();
@@ -142,6 +146,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._spaceWxSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-spacewx-section' });
         this._spaceWxSection.add_child(this._makeDivider());
 
+        // Row 1: K-index, SFI, X-ray class, Solar wind
         let spaceWxRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-spacewx-row' });
 
         // K-index block
@@ -154,13 +159,46 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
         // SFI block
         let sfiBlock = new St.BoxLayout({ vertical: true, style_class: 'simplewx-spacewx-block' });
-        sfiBlock.add_child(new St.Label({ text: 'SFI (F10.7)', style_class: 'simplewx-spacewx-hdr' }));
+        sfiBlock.add_child(new St.Label({ text: 'SFI', style_class: 'simplewx-spacewx-hdr' }));
         this._sfiLabel = new St.Label({ text: '--', style_class: 'simplewx-sfi' });
         sfiBlock.add_child(this._sfiLabel);
 
+        // X-ray flux class block
+        let xrayBlock = new St.BoxLayout({ vertical: true, style_class: 'simplewx-spacewx-block' });
+        xrayBlock.add_child(new St.Label({ text: 'X-Ray', style_class: 'simplewx-spacewx-hdr' }));
+        this._xrayLabel = new St.Label({ text: '--', style_class: 'simplewx-xray' });
+        xrayBlock.add_child(this._xrayLabel);
+
+        // Solar wind block
+        let windBlock = new St.BoxLayout({ vertical: true, style_class: 'simplewx-spacewx-block' });
+        windBlock.add_child(new St.Label({ text: 'Sol Wind', style_class: 'simplewx-spacewx-hdr' }));
+        this._solarWindLabel = new St.Label({ text: '-- km/s', style_class: 'simplewx-solwind' });
+        windBlock.add_child(this._solarWindLabel);
+
         spaceWxRow.add_child(kBlock);
         spaceWxRow.add_child(sfiBlock);
+        spaceWxRow.add_child(xrayBlock);
+        spaceWxRow.add_child(windBlock);
         this._spaceWxSection.add_child(spaceWxRow);
+
+        // Row 2: Band conditions strip
+        this._spaceWxSection.add_child(this._makeDivider());
+        let bandHdr = new St.Label({ text: 'Band Conditions', style_class: 'simplewx-spacewx-hdr' });
+        this._spaceWxSection.add_child(bandHdr);
+
+        this._bandRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-band-row' });
+        this._bandCells = {};
+        const BANDS = ['80m', '40m', '20m', '15m', '10m', '6m'];
+        for (let band of BANDS) {
+            let cell = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-cell' });
+            let nameLabel = new St.Label({ text: band, style_class: 'simplewx-band-name' });
+            let condLabel = new St.Label({ text: '?', style_class: 'simplewx-band-cond' });
+            cell.add_child(nameLabel);
+            cell.add_child(condLabel);
+            this._bandCells[band] = condLabel;
+            this._bandRow.add_child(cell);
+        }
+        this._spaceWxSection.add_child(this._bandRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
 
         // ·· Assemble ··
@@ -280,41 +318,138 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
     // ── Space Weather ────────────────────────────────────────
     _fetchSpaceWeather() {
-        // K-index
+        // ·· K-index ··
         this._httpGet(NOAA_KINDEX_URL, (data) => {
-            // data[0] = header row, last entry = most recent
             let latest = [...data].reverse().find(row => row.time_tag && !isNaN(parseFloat(row.Kp)));
             let kp = latest ? parseFloat(latest.Kp) : 0;
+            this._currentKp = kp;
             let state = kpState(kp);
-            this._kIndexLabel.set_text(`${kp.toFixed(1)}`);
+            this._kIndexLabel.set_text(kp.toFixed(1));
             this._kIndexLabel.set_style(`color: ${state.color}; font-weight: bold;`);
             this._geoStateLabel.set_text(state.label);
             this._geoStateLabel.set_style(`color: ${state.color};`);
-            // K-index — add right after the httpGet success:
-            log(`SimpleWx DEBUG K-index: ${JSON.stringify(data.slice(-3))}`);
-
+            this._updateBandConditions();
         }, () => log('SimpleWx: K-index fetch failed'));
 
-        // Solar Flux Index
+        // ·· Solar Flux Index ··
         this._httpGet(NOAA_FLUX_URL, (json) => {
             let entry = Array.isArray(json) ? json[json.length - 1] : json;
             let flux = parseInt(entry.flux) || 0;
+            this._currentSfi = flux;
             this._sfiLabel.set_text(String(flux));
             let color = flux < 100 ? '#44cc44' : flux < 150 ? '#cccc00' : flux < 200 ? '#ff8800' : '#ff4400';
             this._sfiLabel.set_style(`color: ${color}; font-weight: bold;`);
-
-            // SFI — add right after the httpGet success:
-            log(`SimpleWx DEBUG SFI: ${JSON.stringify(json)}`);
+            this._updateBandConditions();
         }, () => log('SimpleWx: SFI fetch failed'));
 
-        // Schedule next space wx refresh
+        // ·· X-ray flux class ··
+        this._httpGet(NOAA_XRAY_URL, (json) => {
+            let entry = Array.isArray(json) ? json[json.length - 1] : json;
+            let xClass = entry.current_class || '--';
+            this._xrayLabel.set_text(String(xClass));
+            let color = '#44cc44';
+            let letter = String(xClass).charAt(0).toUpperCase();
+            if (letter === 'C') color = '#cccc00';
+            else if (letter === 'M') color = '#ff8800';
+            else if (letter === 'X') color = '#ff2200';
+            this._xrayLabel.set_style(`color: ${color}; font-weight: bold;`);
+        }, () => log('SimpleWx: X-ray fetch failed'));
+
+        // ·· Solar wind speed ··
+        this._httpGet(NOAA_WIND_URL, (data) => {
+            // Debug on first load — remove after confirming structure
+            log(`SimpleWx Wind sample: ${JSON.stringify(data.slice(-2))}`);
+            // Expected: array of arrays [time_tag, density, speed, temperature]
+            // Skip header row (index 0), get last valid entry
+            let latest = [...data].reverse().find(row =>
+                Array.isArray(row) && row.length >= 3 && !isNaN(parseFloat(row[2]))
+            );
+            if (latest) {
+                let speed = Math.round(parseFloat(latest[2]));
+                this._solarWindLabel.set_text(`${speed} km/s`);
+                // Color: green < 400, yellow 400-600, orange 600-800, red > 800
+                let color = speed < 400 ? '#44cc44' : speed < 600 ? '#cccc00' : speed < 800 ? '#ff8800' : '#ff2200';
+                this._solarWindLabel.set_style(`color: ${color}; font-weight: bold;`);
+            } else {
+                this._solarWindLabel.set_text('-- km/s');
+            }
+        }, () => log('SimpleWx: Solar wind fetch failed'));
+
+        // ·· Schedule next space wx refresh ··
         if (this._spaceWxTimer) Mainloop.source_remove(this._spaceWxTimer);
         this._spaceWxTimer = Mainloop.timeout_add_seconds(SPACE_WX_SECS, () => {
             this._fetchSpaceWeather();
             return false;
         });
+    }
 
+    _updateBandConditions() {
+        let kp = this._currentKp;
+        let sfi = this._currentSfi;
+        if (sfi === 0) return; // not loaded yet
 
+        const conditions = {
+            '80m': this._hfCondition80(kp),
+            '40m': this._hfCondition40(kp, sfi),
+            '20m': this._hfConditionMid(kp, sfi, 90, 120),
+            '15m': this._hfConditionHigh(kp, sfi, 110, 150),
+            '10m': this._hfConditionHigh(kp, sfi, 130, 160),
+            '6m': this._vhfCondition(kp, sfi),
+        };
+
+        const COLORS = {
+            'Good': '#44cc44',
+            'Fair': '#cccc00',
+            'Poor': '#ff4400',
+            'Aurora': '#aa44ff',  // VHF aurora enhancement — purple
+        };
+
+        for (let [band, cond] of Object.entries(conditions)) {
+            let label = this._bandCells[band];
+            if (!label) continue;
+            label.set_text(cond);
+            label.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
+        }
+    }
+
+    // 80m: K-index dominated — low bands absorb badly during storms
+    _hfCondition80(kp) {
+        if (kp >= 5) return 'Poor';
+        if (kp >= 3) return 'Fair';
+        return 'Good';
+    }
+
+    // 40m: K-index + SFI both matter
+    _hfCondition40(kp, sfi) {
+        if (kp >= 5) return 'Poor';
+        if (kp >= 4) return 'Fair';
+        if (sfi >= 100 && kp <= 2) return 'Good';
+        if (sfi >= 80) return 'Fair';
+        return 'Poor';
+    }
+
+    // 20m / mid HF
+    _hfConditionMid(kp, sfi, fairFloor, goodFloor) {
+        if (kp >= 4) return 'Poor';
+        if (sfi >= goodFloor) return 'Good';
+        if (sfi >= fairFloor) return 'Fair';
+        return 'Poor';
+    }
+
+    // 15m / 10m / high HF — heavily SFI dependent
+    _hfConditionHigh(kp, sfi, fairFloor, goodFloor) {
+        if (kp >= 4) return 'Poor';
+        if (sfi >= goodFloor) return 'Good';
+        if (sfi >= fairFloor) return 'Fair';
+        return 'Poor';
+    }
+
+    // 6m VHF — aurora enhancement possible with high K
+    _vhfCondition(kp, sfi) {
+        if (kp >= 5) return 'Aurora';  // aurora scatter opportunity!
+        if (sfi >= 150) return 'Good';
+        if (sfi >= 120) return 'Fair';
+        return 'Poor';
     }
 
     // ── Display updates ──────────────────────────────────────
