@@ -6,6 +6,8 @@ const Soup = imports.gi.Soup;
 const Pango = imports.gi.Pango;
 const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
+//resolves weirdness around text and object position in the container
+const Clutter = imports.gi.Clutter;
 
 const USER_AGENT = 'SimpleWx/5.0 simplewx@wd8ta';
 const REFRESH_FLOOR_S = 600;
@@ -160,11 +162,13 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(navRow);
 
         // ·· Current conditions icon ··
-        this._weatherIcon = new St.Icon({ icon_size: 72, style_class: 'simplewx-icon' });
+        //this._weatherIcon = new St.Icon({ icon_size: 72, style_class: 'simplewx-icon' });
+        this._weatherIcon = new St.Icon({ icon_size: 72, style_class: 'simplewx-icon', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._container.add_child(this._weatherIcon);
 
         // ·· Temp row: current + High/Low + info button ··
-        let tempRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-temp-row' });
+        //let tempRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-temp-row' });
+        let tempRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-temp-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._tempLabel = new St.Label({ text: '--°', style_class: 'simplewx-temp' });
         this._hiLoLabel = new St.Label({ text: '', style_class: 'simplewx-hilo' });
         this._infoBtn = new St.Button({ label: 'ℹ', style_class: 'simplewx-info-btn' });
@@ -175,10 +179,12 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(tempRow);
 
         // ·· Condition + wind row ··
-        this._condLabel = new St.Label({ text: 'Fetching...', style_class: 'simplewx-condition' });
+        //this._condLabel = new St.Label({ text: 'Fetching...', style_class: 'simplewx-condition' });
+        this._condLabel = new St.Label({ text: 'Fetching...', style_class: 'simplewx-condition', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._container.add_child(this._condLabel);
 
-        let windRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-wind-row' });
+        //let windRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-wind-row' });
+        let windRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-wind-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._windArrowLabel = new St.Label({ text: '', style_class: 'simplewx-wind-arrow' });
         this._windLabel = new St.Label({ text: '', style_class: 'simplewx-wind' });
         windRow.add_child(this._windArrowLabel);
@@ -186,7 +192,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(windRow);
 
         // ·· Pressure row ··
-        let pressRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-press-row' });
+        //let pressRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-press-row' });
+        let pressRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-press-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._pressLabel = new St.Label({ text: '', style_class: 'simplewx-pressure' });
         this._pressTrend = new St.Label({ text: '', style_class: 'simplewx-pressure-trend' });
         pressRow.add_child(this._pressLabel);
@@ -194,7 +201,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(pressRow);
 
         // ·· Sunrise / Sunset row ··
-        let sunRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-sun-row' });
+        //let sunRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-sun-row' });
+        let sunRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-sun-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         this._sunriseLabel = new St.Label({ text: '', style_class: 'simplewx-sun' });
         this._sunsetLabel = new St.Label({ text: '', style_class: 'simplewx-sun' });
         sunRow.add_child(this._sunriseLabel);
@@ -294,7 +302,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
     }
 
     _buildHeader() {
-        let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-header-row' });
+        //let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-header-row' });
+        let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-header-row', x_align: Clutter.ActorAlign.END, x_expand: true });
         let title = new St.Label({ text: 'Simple WX by ', style_class: 'simplewx-header-title' });
         let callBtn = new St.Button({ label: 'WD8TA', style_class: 'simplewx-header-link' });
         callBtn.connect('clicked', () => {
@@ -306,7 +315,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
     }
 
     _buildFooter() {
-        let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-footer-row' });
+        //let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-footer-row' });
+        let row = new St.BoxLayout({ vertical: false, style_class: 'simplewx-footer-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
         let copy = new St.Label({ text: 'Copyright 2026 - WD8TA  ', style_class: 'simplewx-footer-text' });
         let attrBtn = new St.Button({ label: 'Attributions', style_class: 'simplewx-footer-link' });
         attrBtn.connect('clicked', () => this._toggleAttributions());
@@ -574,7 +584,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
         pairs.forEach((pair, i) => {
             let cell = this._dayCells[i];
-            let dayName = pair.day.name === 'Today' ? 'Now' : pair.day.name.substring(0, 3);
+            let dayName = this._normalizeDayName(pair.day.name);
             let [hi] = this._convertTemp(pair.day.temperature, pair.day.temperatureUnit);
             let loText = '--';
             if (pair.night) {
@@ -602,6 +612,14 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }
     }
 
+    _normalizeDayName(name) {
+        // NWS special period names → real day abbreviation
+        const SPECIAL = ['Today', 'This Morning', 'This Afternoon', 'Tonight', 'Overnight'];
+        if (SPECIAL.some(s => name.startsWith(s))) {
+            return new Date().toLocaleDateString('en-US', { weekday: 'short' });
+        }
+        return name.substring(0, 3);
+    }
     _convertTemp(temp, unit) {
         if (this.units === 'C' && unit === 'F')
             return [Math.round((temp - 32) * 5 / 9), 'C'];

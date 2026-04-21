@@ -8,6 +8,7 @@
 .simplewx-header-row {
     spacing: 0px;
     padding-bottom: 4px;
+    x-align: right;
 }
 
 .simplewx-header-title {
@@ -53,10 +54,13 @@
 /* ── Current conditions ── */
 .simplewx-icon {
     padding-top: 4px;
+    x-align: center;
 }
 
 .simplewx-temp-row {
     spacing: 6px;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-temp {
@@ -86,10 +90,14 @@
 .simplewx-condition {
     font-size: 16px;
     color: #dddddd;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-wind-row {
     spacing: 2px;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-wind-arrow {
@@ -105,6 +113,8 @@
 .simplewx-press-row {
     spacing: 4px;
     padding-top: 2px;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-pressure {
@@ -120,6 +130,8 @@
 .simplewx-sun-row {
     spacing: 2px;
     padding-top: 2px;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-sun {
@@ -279,6 +291,8 @@
 .simplewx-footer-row {
     spacing: 0px;
     padding-top: 6px;
+    text-align: center;
+    x-align: center;
 }
 
 .simplewx-footer-text {
