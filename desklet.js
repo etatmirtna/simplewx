@@ -8,6 +8,27 @@ const Mainloop = imports.mainloop;
 const Settings = imports.ui.settings;
 //resolves weirdness around text and object position in the container
 const Clutter = imports.gi.Clutter;
+//
+// ── Migraine indicator weights ───────────────────────────
+// Adjust these based on your personal experience over time
+const MX = {
+    PRESSURE_DROP_MILD: 0.03,   // inHg — mild drop threshold
+    PRESSURE_DROP_SHARP: 0.10,   // inHg — sharp drop threshold
+    SCORE_PRESSURE_MILD: 2,
+    SCORE_PRESSURE_SHARP: 3,      // cumulative with mild
+    KP_THRESHOLD_MILD: 4,
+    KP_THRESHOLD_SEVERE: 6,
+    SCORE_KP_MILD: 2,
+    SCORE_KP_SEVERE: 3,      // cumulative with mild
+    ELECTRON_ELEVATED: 1000,   // pfu — calibrate from observation
+    PROTON_ELEVATED: 10,      // pfu — calibrate from observation
+    SCORE_ELECTRON: 2,
+    SCORE_PROTON: 2,
+    TEMP_SWING: 10,     // °F forecasted change
+    SCORE_TEMP_SWING: 1,
+    WIND_HIGH: 20,     // mph
+    SCORE_WIND: 1,
+};
 
 const USER_AGENT = 'SimpleWx/5.0 simplewx@wd8ta';
 const REFRESH_FLOOR_S = 600;
@@ -68,6 +89,10 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._pressureHistory = [];
         this._config = this._loadConfig();
         this._attributions = this._loadAttributions();
+        this._currentElectronFlux = 0;
+        this._currentProtonFlux = 0;
+        this._currentWindSpeed = 0;  // terrestrial, mph
+        this._forecastTempSwing = 0;
 
         this._bindSettings(metadata, desklet_id);
         this._buildUI();
@@ -238,7 +263,11 @@ class SimpleWxDesklet extends Desklet.Desklet {
             new St.Label({ text: 'Space Weather', style_class: 'simplewx-section-hdr' })
         );
 
-        let spaceWxRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-spacewx-row' });
+        let spaceWxRow = new St.BoxLayout({
+            vertical: false,
+            style_class: 'simplewx-spacewx-row',
+            y_align: Clutter.ActorAlign.START
+        });
 
         let kBlock = this._makeSpaceBlock('K-index');
         this._kIndexLabel = new St.Label({ text: '--', style_class: 'simplewx-kindex' });
@@ -258,10 +287,29 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._solarWindLabel = new St.Label({ text: '-- km/s', style_class: 'simplewx-solwind' });
         windBlock.add_child(this._solarWindLabel);
 
+        // ·· New: Electron flux ··
+        let eBlock = this._makeSpaceBlock('e- Flux');
+        this._electronLabel = new St.Label({ text: '--', style_class: 'simplewx-particle' });
+        eBlock.add_child(this._electronLabel);
+        //eBlock.set_style('margin-top: -8px;');
+
+        // ·· New: Proton flux ··
+        let pBlock = this._makeSpaceBlock('p+ Flux');
+        this._protonLabel = new St.Label({ text: '--', style_class: 'simplewx-particle' });
+        pBlock.add_child(this._protonLabel);
+        //pBlock.set_style('margin-top: -8px;');
+
+
+
+
+
+
         spaceWxRow.add_child(kBlock);
         spaceWxRow.add_child(sfiBlock);
         spaceWxRow.add_child(xrayBlock);
         spaceWxRow.add_child(windBlock);
+        spaceWxRow.add_child(eBlock);
+        spaceWxRow.add_child(pBlock);
         this._spaceWxSection.add_child(spaceWxRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
@@ -286,6 +334,29 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._bandSection.add_child(this._bandRow);
         this._bandSection.visible = this.showBandConds !== false;
         this._container.add_child(this._bandSection);
+
+        // ·· Migraine indicator section ··
+        this._migraineSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-migraine-section' });
+        this._migraineSection.add_child(this._makeDivider());
+
+        let mxHeaderRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-mx-header-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        mxHeaderRow.add_child(new St.Label({ text: '⚡ Migraine Index', style_class: 'simplewx-section-hdr' }));
+        this._migraineSection.add_child(mxHeaderRow);
+
+        let mxRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-mx-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        this._mxIndicatorLabel = new St.Label({ text: 'Calculating...', style_class: 'simplewx-mx-indicator' });
+        this._mxScoreLabel = new St.Label({ text: '', style_class: 'simplewx-mx-score' });
+        mxRow.add_child(this._mxIndicatorLabel);
+        mxRow.add_child(this._mxScoreLabel);
+        this._migraineSection.add_child(mxRow);
+
+        // Factor breakdown row
+        this._mxFactorsLabel = new St.Label({ text: '', style_class: 'simplewx-mx-factors', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        this._mxFactorsLabel.clutter_text.line_wrap = true;
+        this._mxFactorsLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._migraineSection.add_child(this._mxFactorsLabel);
+        this._container.add_child(this._migraineSection);
+
 
         // ·· Attributions popup ··
         this._attrPopupBox = new St.BoxLayout({ vertical: true, style_class: 'simplewx-popup simplewx-attr-popup', visible: false });
@@ -568,6 +639,12 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._condLabel.set_text(shortForecast);
         this._windArrowLabel.set_text(windArrow(windDirection));
         this._windLabel.set_text(` ${windDirection} ${windSpeed}`);
+        // Parse wind speed for migraine model — NWS returns "10 mph" or "10 to 15 mph"
+        let speedMatch = (windSpeed || '').match(/(\d+)\s*(?:to\s*(\d+))?\s*mph/i);
+        if (speedMatch) {
+            this._currentWindSpeed = parseInt(speedMatch[2] || speedMatch[1]);
+            this._updateMigraineIndicator();
+        }
         this._weatherIcon.set_gicon(
             Gio.icon_new_for_string(this._resolveIcon(shortForecast, isDaytime))
         );
@@ -609,6 +686,16 @@ class SimpleWxDesklet extends Desklet.Desklet {
                 loText = String(lo);
             }
             this._hiLoLabel.set_text(` ↑${hi}° ↓${loText}°`);
+        }
+
+        // Temperature swing = today high minus tonight low
+        if (pairs.length > 0) {
+            let [hi] = this._convertTemp(pairs[0].day.temperature, pairs[0].day.temperatureUnit);
+            if (pairs[0].night) {
+                let [lo] = this._convertTemp(pairs[0].night.temperature, pairs[0].night.temperatureUnit);
+                this._forecastTempSwing = Math.abs(hi - lo);
+                this._updateMigraineIndicator();
+            }
         }
     }
 
@@ -674,12 +761,67 @@ class SimpleWxDesklet extends Desklet.Desklet {
             }
         }, () => log('SimpleWx: Solar wind fetch failed'));
 
-        if (this._spaceWxTimer) Mainloop.source_remove(this._spaceWxTimer);
-        this._spaceWxTimer = Mainloop.timeout_add_seconds(SPACE_WX_SECS, () => {
-            this._fetchSpaceWeather();
-            return false;
-        });
-    }
+        // ·· Electron flux ··
+        this._httpGet(this._endpoint('noaa_electrons'), (data) => {
+            if (!Array.isArray(data) || data.length === 0) return;
+
+            // Get the most recent timestamp
+            let latest = data[data.length - 1];
+            let latestTime = latest.time_tag;
+
+            // Filter to 79 keV channel at latest timestamp only
+            let channel = [...data]
+                .reverse()
+                .find(r => r.time_tag === latestTime &&
+                    r.energy && r.energy.includes('79') &&
+                    !isNaN(parseFloat(r.flux)));
+
+            if (channel) {
+                let flux = parseFloat(channel.flux);
+                this._currentElectronFlux = flux;
+                let displayVal = flux >= 1000
+                    ? `${(flux / 1000).toFixed(1)}k`
+                    : String(Math.round(flux));
+                this._electronLabel.set_text(displayVal);
+                let color = flux < MX.ELECTRON_ELEVATED
+                    ? '#44cc44'
+                    : flux < MX.ELECTRON_ELEVATED * 10
+                        ? '#cccc00'
+                        : '#ff4400';
+                this._electronLabel.set_style(`color: ${color}; font-weight: bold;`);
+                this._updateMigraineIndicator();
+            }
+        }, () => log('SimpleWx: Electron flux fetch failed'));
+
+        // ·· Proton flux ··
+        this._httpGet(this._endpoint('noaa_protons'), (data) => {
+            if (!Array.isArray(data) || data.length === 0) return;
+
+            // Get most recent timestamp
+            let latest = data[data.length - 1];
+            let latestTime = latest.time_tag;
+
+            // >=10 MeV is the NOAA S-scale reference channel
+            let channel = [...data]
+                .reverse()
+                .find(r => r.time_tag === latestTime &&
+                    r.energy && r.energy.includes('10 MeV') &&
+                    !isNaN(parseFloat(r.flux)));
+
+            if (channel) {
+                let flux = parseFloat(channel.flux);
+                this._currentProtonFlux = flux;
+                // Proton flux displays with 2 decimal places — values are small
+                this._protonLabel.set_text(flux.toFixed(2));
+                // NOAA S1 storm threshold is 10 pfu
+                let color = flux < 1 ? '#44cc44'
+                    : flux < 10 ? '#cccc00'
+                        : flux < 100 ? '#ff8800'
+                            : '#ff2200';
+                this._protonLabel.set_style(`color: ${color}; font-weight: bold;`);
+                this._updateMigraineIndicator();
+            }
+        }, () => log('SimpleWx: Proton flux fetch failed'));    }
 
     // ── Band conditions ──────────────────────────────────────
     _updateBandConditions() {
@@ -755,6 +897,93 @@ class SimpleWxDesklet extends Desklet.Desklet {
                 if (onError) onError(e);
             }
         });
+    }
+
+    // Flexible last-valid-entry finder for NOAA array responses
+    // Tries field names in order, returns first numeric match from end of array
+    _lastValidEntry(data, fieldNames) {
+        if (!Array.isArray(data) || data.length === 0) return null;
+        let reversed = [...data].reverse();
+        for (let row of reversed) {
+            if (Array.isArray(row)) {
+                // Array-of-arrays format — try indices 1 and 2
+                for (let idx of [1, 2]) {
+                    let val = parseFloat(row[idx]);
+                    if (!isNaN(val) && val >= 0) return val;
+                }
+            } else if (typeof row === 'object') {
+                // Array-of-objects format — try field names in order
+                for (let field of fieldNames) {
+                    let val = parseFloat(row[field]);
+                    if (!isNaN(val) && val >= 0) return val;
+                }
+            }
+        }
+        return null;
+    }
+
+    _updateMigraineIndicator() {
+        let score = 0;
+        let factors = [];
+
+        // ·· Barometric pressure trend ··
+        let trend = this._pressureTrend();
+        let pressureDelta = this._pressureHistory.length >= 2
+            ? this._pressureHistory[0].val - this._pressureHistory[this._pressureHistory.length - 1].val
+            : 0;
+        if (pressureDelta > MX.PRESSURE_DROP_SHARP) {
+            score += MX.SCORE_PRESSURE_MILD + MX.SCORE_PRESSURE_SHARP;
+            factors.push(`Pressure ↓ sharply`);
+        } else if (pressureDelta > MX.PRESSURE_DROP_MILD) {
+            score += MX.SCORE_PRESSURE_MILD;
+            factors.push(`Pressure ↓`);
+        }
+
+        // ·· K-index ··
+        if (this._currentKp >= MX.KP_THRESHOLD_SEVERE) {
+            score += MX.SCORE_KP_MILD + MX.SCORE_KP_SEVERE;
+            factors.push(`Kp ${this._currentKp.toFixed(1)} (severe storm)`);
+        } else if (this._currentKp >= MX.KP_THRESHOLD_MILD) {
+            score += MX.SCORE_KP_MILD;
+            factors.push(`Kp ${this._currentKp.toFixed(1)} (active)`);
+        }
+
+        // ·· Electron flux ··
+        if (this._currentElectronFlux >= MX.ELECTRON_ELEVATED) {
+            score += MX.SCORE_ELECTRON;
+            factors.push(`e⁻ flux elevated`);
+        }
+
+        // ·· Proton flux ··
+        if (this._currentProtonFlux >= MX.PROTON_ELEVATED) {
+            score += MX.SCORE_PROTON;
+            factors.push(`p⁺ flux elevated`);
+        }
+
+        // ·· Terrestrial wind ··
+        if (this._currentWindSpeed >= MX.WIND_HIGH) {
+            score += MX.SCORE_WIND;
+            factors.push(`Wind ${this._currentWindSpeed} mph`);
+        }
+
+        // ·· Temperature swing ··
+        if (this._forecastTempSwing >= MX.TEMP_SWING) {
+            score += MX.SCORE_TEMP_SWING;
+            factors.push(`Temp swing ${this._forecastTempSwing}°`);
+        }
+
+        // ·· Map score to indicator ··
+        let indicator;
+        if (score <= 2) indicator = { label: 'Low', color: '#44cc44' };
+        else if (score <= 5) indicator = { label: 'Moderate', color: '#cccc00' };
+        else if (score <= 8) indicator = { label: 'Elevated', color: '#ff8800' };
+        else indicator = { label: 'High', color: '#ff2200' };
+
+        this._mxIndicatorLabel.set_text(indicator.label);
+        this._mxIndicatorLabel.set_style(`color: ${indicator.color}; font-weight: bold;`);
+        this._mxScoreLabel.set_text(`  (${score})`);
+        this._mxScoreLabel.set_style(`color: ${indicator.color};`);
+        this._mxFactorsLabel.set_text(factors.length > 0 ? factors.join('  ·  ') : 'No significant factors');
     }
 
     // ── Refresh scheduling ───────────────────────────────────
