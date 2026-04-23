@@ -32,6 +32,34 @@
         "description": "Default Favorite (1-5)",
         "tooltip": "Which favorite to show when geolocation is off or unavailable"
     },
+    "show-border": {
+        "type": "checkbox",
+        "default": false,
+        "description": "Show desklet border"
+    },
+    "border-color": {
+        "type": "colorchooser",
+        "default": "rgba(255,255,255,0.4)",
+        "description": "Border color"
+    },
+    "border-size": {
+        "type": "spinbutton",
+        "default": 1,
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "units": "px",
+        "description": "Border size"
+    },
+    "border-radius": {
+        "type": "spinbutton",
+        "default": 4,
+        "min": 0,
+        "max": 16,
+        "step": 1,
+        "units": "px",
+        "description": "Border corner radius"
+    },    
     "show-space-wx": {
         "type": "checkbox",
         "default": true,
@@ -49,6 +77,11 @@
         "default": true,
         "description": "Show 7-Day Forecast strip",
         "tooltip": "When hidden the desklet collapses to current conditions only"
+    },
+    "show-migraine": {
+        "type": "checkbox",
+        "default": true,
+        "description": "Show Migraine Index section"
     },
     "fav1-name": {
         "type": "entry",
@@ -124,5 +157,10 @@
         "type": "entry",
         "default": "",
         "description": "Favorite 5 — Longitude"
+    },
+    "disclaimer-acknowledged": {
+        "type": "checkbox",
+        "default": false,
+        "description": "Disclaimer acknowledged (do not modify)"
     }
 }

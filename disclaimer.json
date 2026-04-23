@@ -1,0 +1,33 @@
+{
+    "version": "1.0",
+    "sections": [
+        {
+            "title": "GENERAL DISCLAIMER",
+            "content": "SimpleWx is an independent, open-source desktop widget developed by an amateur radio operator for personal and educational use. It is provided free of charge, as-is, with no warranties of any kind, either expressed or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement."
+        },
+        {
+            "title": "WEATHER & SPACE WEATHER DATA",
+            "content": "All weather data is sourced from the U.S. National Weather Service (NWS) and NOAA Space Weather Prediction Center (SWPC). SimpleWx does not generate, verify, or guarantee the accuracy, completeness, timeliness, or fitness of any data presented. Data may be delayed, incorrect, or unavailable at any time. Do not rely on SimpleWx as your sole or primary source of weather information for safety-critical decisions."
+        },
+        {
+            "title": "MIGRAINE INDEX — IMPORTANT HEALTH DISCLAIMER",
+            "content": "THE MIGRAINE INDEX IS NOT A MEDICAL DEVICE, DIAGNOSTIC TOOL, OR CLINICAL INSTRUMENT OF ANY KIND.\n\nThe Migraine Index is an experimental, personal research feature based solely on one individual's informal observations of correlations between environmental factors and personal migraine experiences. It has not been clinically validated, peer-reviewed, tested in a controlled environment, or approved by any medical, scientific, or regulatory authority.\n\nThe Migraine Index does not predict, diagnose, prevent, or treat migraines or any other medical condition. It does not account for individual medical history, medications, comorbidities, or other personal health factors. Environmental factors displayed are general measurements and may have no relevance to any specific individual's health.\n\nDo not use the Migraine Index to make any medical decision. Do not use it to adjust, start, or stop any medication or treatment. Do not use it as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions you may have regarding a medical condition."
+        },
+        {
+            "title": "LIMITATION OF LIABILITY",
+            "content": "To the maximum extent permitted by applicable law, the author(s) and contributor(s) of SimpleWx shall not be liable for any direct, indirect, incidental, special, consequential, punitive, or exemplary damages arising from or related to the use of or inability to use this software, including but not limited to:\n\n• Decisions made based on weather, space weather, or Migraine Index data\n• Personal injury, health outcomes, or medical events\n• Property damage or financial loss\n• Missed events or activities based on forecast information\n• Any action or inaction taken in reliance on information displayed\n\nThis limitation applies regardless of the theory of liability and even if the author has been advised of the possibility of such damages."
+        },
+        {
+            "title": "NO EMERGENCY USE",
+            "content": "SimpleWx is not designed for, and must not be used for, emergency preparedness, severe weather sheltering decisions, evacuation planning, or any situation where human safety may be at risk. Always consult official emergency management authorities and National Weather Service alerts for safety-critical situations.\n\nIf you are experiencing a medical emergency, call emergency services (911 in the US) immediately. Do not rely on the Migraine Index or any feature of SimpleWx in a medical emergency."
+        },
+        {
+            "title": "EXPERIMENTAL NATURE OF THE MIGRAINE INDEX",
+            "content": "The Migraine Index scoring model, threshold values, and weighting factors are experimental and subject to change without notice. The model was derived from informal personal observation and has not been validated against any population. Individual responses to environmental factors vary significantly. A 'Low' score does not guarantee the absence of a migraine event. A 'High' score does not guarantee a migraine event will occur.\n\nUsers who choose to track correlations between the Migraine Index and personal health events do so entirely at their own risk and are encouraged to share findings only as informal anecdotal data, not as clinical evidence."
+        },
+        {
+            "title": "ACCEPTANCE OF TERMS",
+            "content": "By using SimpleWx you acknowledge that you have read, understood, and agreed to this disclaimer in its entirety. You accept full responsibility for any decisions made based on information displayed by this software. If you do not agree with any part of this disclaimer, discontinue use of SimpleWx immediately."
+        }
+    ]
+}
