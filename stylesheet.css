@@ -415,3 +415,31 @@
     border: none;
     box-shadow: none;
 }
+
+/* ── Moon phase ── */
+.simplewx-moon-row {
+    spacing: 2px;
+    padding-top: 2px;
+}
+
+.simplewx-moon-phase {
+    font-size: 12px;
+    color: #dddddd;
+}
+
+.simplewx-moon-illum {
+    font-size: 11px;
+    color: #aaaaaa;
+}
+
+/* ── Aurora ── */
+.simplewx-aurora-level {
+    font-size: 18px;
+    font-weight: bold;
+    color: #888888;
+}
+
+.simplewx-aurora-vis {
+    font-size: 12px;
+    color: #888888;
+}

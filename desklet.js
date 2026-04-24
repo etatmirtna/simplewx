@@ -28,6 +28,12 @@ const MX = {
     SCORE_TEMP_SWING: 1,
     WIND_HIGH: 20,     // mph
     SCORE_WIND: 1,
+    // Moon phase migraine windows
+    MOON_NEW_WINDOW: 1.5,   // days either side of new moon
+    MOON_FULL_WINDOW: 1.5,   // days either side of full moon
+    SCORE_MOON_NEW: 1,
+    SCORE_MOON_FULL: 1,
+    SCORE_AURORA: 1,     // aurora visible at user latitude
 };
 
 const USER_AGENT = 'SimpleWx/5.0 simplewx@wd8ta';
@@ -95,6 +101,10 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._currentProtonFlux = 0;
         this._currentWindSpeed = 0;  // terrestrial, mph
         this._forecastTempSwing = 0;
+        this._moonAge = 0;   // days since last new moon
+        this._moonIllum = 0;   // illumination 0-1
+        this._auroraVisible = false; // aurora visible at user latitude
+        this._forecastKp = 0;
         //
         this._buildUI();
         this._bindSettings(metadata, desklet_id);
@@ -316,6 +326,19 @@ class SimpleWxDesklet extends Desklet.Desklet {
         sunRow.add_child(this._sunsetLabel);
         this._container.add_child(sunRow);
 
+        // ·· Moon phase row ··
+        let moonRow = new St.BoxLayout({
+            vertical: false,
+            style_class: 'simplewx-moon-row',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        this._moonPhaseLabel = new St.Label({ text: '', style_class: 'simplewx-moon-phase' });
+        this._moonIllumLabel = new St.Label({ text: '', style_class: 'simplewx-moon-illum' });
+        moonRow.add_child(this._moonPhaseLabel);
+        moonRow.add_child(this._moonIllumLabel);
+        this._container.add_child(moonRow);
+
         // ·· Detailed forecast popup ··
         this._popupBox = new St.BoxLayout({ vertical: true, style_class: 'simplewx-popup', visible: false });
         this._popupLabel = new St.Label({ text: '', style_class: 'simplewx-popup-text' });
@@ -379,15 +402,27 @@ class SimpleWxDesklet extends Desklet.Desklet {
         let pBlock = this._makeSpaceBlock('p+ Flux');
         this._protonLabel = new St.Label({ text: '--', style_class: 'simplewx-particle' });
         pBlock.add_child(this._protonLabel);
+
+        // ·· Aurora block ··
+        let auroraBlock = this._makeSpaceBlock('Aurora');
+        this._auroraLabel = new St.Label({ text: '--', style_class: 'simplewx-aurora-level' });
+        this._auroraVisLabel = new St.Label({ text: '', style_class: 'simplewx-aurora-vis' });
+        this._auroraVisLabel.clutter_text.ellipsize = imports.gi.Pango.EllipsizeMode.NONE;
+        auroraBlock.add_child(this._auroraLabel);
+        auroraBlock.add_child(this._auroraVisLabel);
+
         spaceWxRow.add_child(kBlock);
         spaceWxRow.add_child(sfiBlock);
         spaceWxRow.add_child(xrayBlock);
         spaceWxRow.add_child(windBlock);
         spaceWxRow.add_child(eBlock);
         spaceWxRow.add_child(pBlock);
+        spaceWxRow.add_child(auroraBlock);        
         this._spaceWxSection.add_child(spaceWxRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
+
+
 
         // ·· Band conditions section ··
         this._bandSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-section' });
@@ -414,13 +449,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._migraineSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-migraine-section' });
         this._migraineSection.add_child(this._makeDivider());
 
-/*         let mxHeaderRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-mx-header-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
-        //mxHeaderRow.add_child(new St.Label({ text: '⚡ Migraine Index', style_class: 'simplewx-section-hdr' }));
-        mxHeaderRow.add_child(new St.Label({
-            text: '⚡ Migraine Index    ',
-            style_class: 'simplewx-section-hdr',
-            x_expand: true
-        })); */
         let mxHeaderRow = new St.BoxLayout({
             vertical: false,
             style_class: 'simplewx-mx-header-row',
@@ -693,6 +721,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             this._fetchDailyForecast();
             this._fetchCurrentObservation();
             this._updateSunriseSunset();
+            this._updateMoonDisplay();
         }, () => this._setError('NWS points lookup failed'));
     }
 
@@ -807,6 +836,54 @@ class SimpleWxDesklet extends Desklet.Desklet {
             sunrise: this._decimalToTime(((rise % 24) + 24) % 24),
             sunset: this._decimalToTime(((set % 24) + 24) % 24)
         };
+    }
+
+    // ── Moon Phase Calculation ───────────────────────────────
+    // Based on Jean Meeus "Astronomical Algorithms"
+    _calcMoonPhase() {
+        let now = new Date();
+        let jd = (now.getTime() / 86400000) + 2440587.5;
+
+        // Known new moon: Jan 6 2000 18:14 UTC = JD 2451550.1
+        let daysSinceNew = (jd - 2451550.1) % 29.53059;
+        if (daysSinceNew < 0) daysSinceNew += 29.53059;
+
+        this._moonAge = daysSinceNew;
+        let phase = (daysSinceNew / 29.53059) * 2 * Math.PI;
+        this._moonIllum = (1 - Math.cos(phase)) / 2;
+
+        return {
+            age: daysSinceNew,
+            illum: this._moonIllum,
+            name: this._moonPhaseName(daysSinceNew),
+            emoji: this._moonEmoji(daysSinceNew)
+        };
+    }
+
+    _moonPhaseName(age) {
+        if (age < 1.85) return 'New Moon';
+        if (age < 7.38) return 'Waxing Crescent';
+        if (age < 9.22) return 'First Quarter';
+        if (age < 14.77) return 'Waxing Gibbous';
+        if (age < 16.61) return 'Full Moon';
+        if (age < 22.15) return 'Waning Gibbous';
+        if (age < 23.99) return 'Last Quarter';
+        if (age < 29.53) return 'Waning Crescent';
+        return 'New Moon';
+    }
+
+    _moonEmoji(age) {
+        // 8 phase symbols mapped across the 29.53 day cycle
+        let index = Math.round((age / 29.53059) * 8) % 8;
+        return ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][index];
+    }
+
+    _updateMoonDisplay() {
+        let moon = this._calcMoonPhase();
+        let illumPct = Math.round(moon.illum * 100);
+        this._moonPhaseLabel.set_text(`${moon.emoji} ${moon.name}`);
+        this._moonIllumLabel.set_text(`  ${illumPct}%`);
+        this._updateMigraineIndicator();
     }
 
     _decimalToTime(decimal) {
@@ -1010,8 +1087,66 @@ class SimpleWxDesklet extends Desklet.Desklet {
                 this._protonLabel.set_style(`color: ${color}; font-weight: bold;`);
                 this._updateMigraineIndicator();
             }
-        }, () => log('SimpleWx: Proton flux fetch failed'));    }
+        }, () => log('SimpleWx: Proton flux fetch failed'));   
+        
+        this._fetchAurora();
 
+        // Schedule next space weather refresh
+        if (this._spaceWxTimer) Mainloop.source_remove(this._spaceWxTimer);
+        this._spaceWxTimer = Mainloop.timeout_add_seconds(SPACE_WX_SECS, () => {
+            this._fetchSpaceWeather();
+            return false;
+        });
+    }
+        
+    // ── Aurora Forecast ──────────────────────────────────────
+    _fetchAurora() {
+        this._httpGet(this._endpoint('noaa_kforecast'), (data) => {
+            if (!Array.isArray(data) || data.length === 0) return;
+
+            // Array of objects with time_tag and kp fields
+            // Find next future predicted entry
+            let now = new Date();
+            let future = data.find(row => {
+                if (typeof row !== 'object' || !row.time_tag) return false;
+                let t = new Date(row.time_tag);
+                return t > now && !isNaN(parseFloat(row.kp));
+            });
+
+            // Fall back to last entry if no future entry found
+            if (!future) {
+                future = [...data].reverse().find(row =>
+                    typeof row === 'object' && !isNaN(parseFloat(row.kp))
+                );
+            }
+
+            if (!future) return;
+
+            let forecastKp = parseFloat(future.kp);
+            this._forecastKp = forecastKp;
+
+            // Aurora equatorward boundary: lat = 90 - (Kp * 5)
+            let auroraLat = 90 - (forecastKp * 5);
+            let userLat = this._currentLocation ? this._currentLocation.lat : 90;
+            this._auroraVisible = userLat >= auroraLat;
+
+            let auroraState = kpState(forecastKp);
+            this._auroraLabel.set_text(`Kp ${forecastKp.toFixed(1)}`);
+            this._auroraLabel.set_style(`color: ${auroraState.color}; font-weight: bold;`);
+
+            if (this._auroraVisible) {
+                this._auroraVisLabel.set_text('Visible here!');
+                this._auroraVisLabel.set_style('color: #aa44ff; font-weight: bold;');
+            } else {
+                this._auroraVisLabel.set_text(`Above ${Math.round(auroraLat)}°N`);
+                this._auroraVisLabel.set_style('color: #888888;');
+            }
+
+            this._updateMigraineIndicator();
+            this._updateBandConditions();
+
+        }, () => log('SimpleWx: Aurora forecast fetch failed'));
+    }
     // ── Band conditions ──────────────────────────────────────
     _updateBandConditions() {
         let kp = this._currentKp, sfi = this._currentSfi;
@@ -1037,7 +1172,11 @@ class SimpleWxDesklet extends Desklet.Desklet {
     _cond40(kp, sfi) { if (kp >= 5) return 'Poor'; if (kp >= 4) return 'Fair'; return sfi >= 100 && kp <= 2 ? 'Good' : sfi >= 80 ? 'Fair' : 'Poor'; }
     _condMid(kp, sfi, f, g) { if (kp >= 4) return 'Poor'; return sfi >= g ? 'Good' : sfi >= f ? 'Fair' : 'Poor'; }
     _condHigh(kp, sfi, f, g) { if (kp >= 4) return 'Poor'; return sfi >= g ? 'Good' : sfi >= f ? 'Fair' : 'Poor'; }
-    _condVhf(kp, sfi) { if (kp >= 5) return 'Aurora'; return sfi >= 150 ? 'Good' : sfi >= 120 ? 'Fair' : 'Poor'; }
+    _condVhf(kp, sfi) {  // Use forecast Kp for aurora prediction if available
+        let effectiveKp = Math.max(kp, this._forecastKp || 0);
+        if (effectiveKp >= 5) return 'Aurora';
+        return sfi >= 150 ? 'Good' : sfi >= 120 ? 'Fair' : 'Poor';
+}
 
     // ── Icon resolution ──────────────────────────────────────
     _resolveIcon(shortForecast, isDaytime) {
@@ -1153,6 +1292,26 @@ class SimpleWxDesklet extends Desklet.Desklet {
         if (this._currentWindSpeed >= MX.WIND_HIGH) {
             score += MX.SCORE_WIND;
             factors.push(`Wind ${this._currentWindSpeed} mph`);
+        }
+
+        // ·· Moon phase ··
+        let moonAge = this._moonAge;
+        let nearNew = moonAge < MX.MOON_NEW_WINDOW || moonAge > (29.53059 - MX.MOON_NEW_WINDOW);
+        let nearFull = Math.abs(moonAge - 14.77) < MX.MOON_FULL_WINDOW;
+
+        if (nearNew) {
+            score += MX.SCORE_MOON_NEW;
+            factors.push('New Moon window');
+        }
+        if (nearFull) {
+            score += MX.SCORE_MOON_FULL;
+            factors.push('Full Moon window');
+        }
+
+        // ·· Aurora visibility ··
+        if (this._auroraVisible) {
+            score += MX.SCORE_AURORA;
+            factors.push('Aurora at your latitude');
         }
 
         // ·· Temperature swing ··
