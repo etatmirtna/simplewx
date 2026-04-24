@@ -4,5 +4,6 @@
   "description": "Simple weather desklet using NWS data",
   "version": "1.0",
   "author": "WD8TA",
-  "max-instances": "1"
+  "max-instances": "1",
+  "prevent-decoration": true
 }

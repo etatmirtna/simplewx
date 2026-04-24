@@ -1,7 +1,7 @@
 .simplewx-container {
     /* padding: 10px; */
     spacing: 4px;
-    min-width: 260px;
+    min-width: 300px;
 }
 
 /* ── Header ── */
@@ -407,4 +407,11 @@
 .simplewx-ack-btn:hover {
     color: #ffffff;
     border-color: #ffffff;
+}
+
+.desklet {
+    background-color: transparent;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }

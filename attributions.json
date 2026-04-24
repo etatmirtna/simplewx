@@ -4,10 +4,10 @@
             "category": "Weather Icons",
             "items": [
                 {
-                    "name": "Placeholder icon set name",
-                    "author": "Placeholder author",
-                    "source": "https://placeholder.url",
-                    "license": "Placeholder license"
+                    "name": "Oxygen Icons",
+                    "author": "Oxygen Team / KDE (https://www.iconarchive.com/icons/oxygen-icons.org/oxygen/authors.txt)",
+                    "source": "https://github.com/KDE/oxygen-icons",
+                    "license": "LGPL (https://www.gnu.org/licenses/lgpl-3.0.html)"
                 }
             ]
         },
