@@ -1,5 +1,5 @@
 # SimpleWx
-### A Cinnamon Desktop Desklet for Linux Mint
+### Ham radio aware weather desklet for Linux Mint Cinnamon with space weather and migraine index
 
 **By WD8TA** | [QRZ.COM/db/WD8TA](https://www.qrz.com/db/WD8TA)
 
