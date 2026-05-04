@@ -189,7 +189,7 @@ SimpleWx includes a graceful fallback chain — if a specific icon file doesn't 
 
 ### Finding Latitude/Longitude
 
-For any US city: [latlong.net](https://www.latlong.net) or simply search "Columbus Ohio latitude longitude" in any search engine.
+For any US city: [latlong.net](https://www.latlong.net) or simply search "Your City and State latitude longitude" in any search engine.
 
 ### Migraine Index Calibration
 
@@ -238,7 +238,7 @@ SimpleWx is the first tool to combine all of these factors into a single real-ti
 
 ## For Ham Radio Operators
 
-SimpleWx was built by a ham (WD8TA, General class, Columbus OH) frustrated with weather desklets that didn't understand what the ionosphere was doing. The space weather section gives you everything you need to decide whether to call CQ on 20m or give up and watch TV:
+SimpleWx was built by a ham (WD8TA, Extra class, Columbus OH) frustrated with weather desklets that didn't understand what the ionosphere was doing. The space weather section gives you everything you need to decide whether to call CQ on 20m or give up and watch TV:
 
 - **SFI > 150** — 10m and 15m are likely open
 - **K-index ≥ 4** — HF is getting rough, especially low bands
