@@ -76,6 +76,11 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
     constructor(metadata, desklet_id) {
         super(metadata, desklet_id);
+        // Add Refresh to desklet right-click context menu
+        this._menu.addAction('Refresh', () => {
+            this._startWeather();
+            this._fetchSpaceWeather();
+        });
         this._metadata = metadata;
         this._assetsPath = `${metadata.path}/assets`;
         this._forecastUrl = null;
@@ -105,9 +110,15 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._moonIllum = 0;   // illumination 0-1
         this._auroraVisible = false; // aurora visible at user latitude
         this._forecastKp = 0;
+        this._currentDayPopupIndex = -1;
+        this._mxExplainVisible = false;
+        this._lastLoggedScore = -1;
+        this._csvPath = `${metadata.path}/data/migraine_log.csv`;
+        this._ensureCsvExists();
         //
         this._buildUI();
         this._bindSettings(metadata, desklet_id);
+        this._applyBorder();
         this._loadLocations();
         this._startWeather();
         this._fetchSpaceWeather();
@@ -267,6 +278,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(this._buildHeader());
 
         // ·· Nav row ··
+
         let navRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-nav-row' });
         this._prevBtn = new St.Button({ label: '◀', style_class: 'simplewx-nav-btn' });
         this._prevBtn.connect('clicked', () => this._cycleLocation(-1));
@@ -277,6 +289,15 @@ class SimpleWxDesklet extends Desklet.Desklet {
         navRow.add_child(this._locationLabel);
         navRow.add_child(this._nextBtn);
         this._container.add_child(navRow);
+
+        // ·· Lat/Lon display ··
+        this._latLonLabel = new St.Label({
+            text: '',
+            style_class: 'simplewx-latlon',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        this._container.add_child(this._latLonLabel);
 
         // ·· Current conditions icon ··
         //this._weatherIcon = new St.Icon({ icon_size: 72, style_class: 'simplewx-icon' });
@@ -339,6 +360,18 @@ class SimpleWxDesklet extends Desklet.Desklet {
         moonRow.add_child(this._moonIllumLabel);
         this._container.add_child(moonRow);
 
+        // ·· MUF display ··
+        let mufRow = new St.BoxLayout({
+            vertical: false,
+            style_class: 'simplewx-muf-row',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        this._mufLabel = new St.Label({ text: '', style_class: 'simplewx-muf' });
+        this._mufLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        mufRow.add_child(this._mufLabel);
+        this._container.add_child(mufRow);
+
         // ·· Detailed forecast popup ··
         this._popupBox = new St.BoxLayout({ vertical: true, style_class: 'simplewx-popup', visible: false });
         this._popupLabel = new St.Label({ text: '', style_class: 'simplewx-popup-text' });
@@ -350,23 +383,59 @@ class SimpleWxDesklet extends Desklet.Desklet {
         // ·· 7-day forecast strip ··
         this._forecastSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-forecast-section' });
         this._forecastSection.add_child(this._makeDivider());
-        this._forecastRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-forecast-row' });
+
+        // Section header — centered
+        let forecastHdr = new St.Label({
+            text: '7-Day Forecast',
+            style_class: 'simplewx-section-hdr',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        forecastHdr.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._forecastSection.add_child(forecastHdr);
+
+        this._forecastRow = new St.BoxLayout({
+            vertical: false,
+            style_class: 'simplewx-forecast-row',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
         this._dayCells = [];
         for (let i = 0; i < 7; i++) {
-            let cell = this._makeDayCell();
+            let cell = this._makeDayCell(i);
             this._dayCells.push(cell);
             this._forecastRow.add_child(cell.container);
         }
         this._forecastSection.add_child(this._forecastRow);
+
+        // ·· Day detail popup — shared, toggled per cell ··
+        this._dayPopupBox = new St.BoxLayout({
+            vertical: true,
+            style_class: 'simplewx-popup simplewx-day-popup',
+            visible: false
+        });
+        this._dayPopupLabel = new St.Label({ text: '', style_class: 'simplewx-popup-text' });
+        this._dayPopupLabel.clutter_text.line_wrap = true;
+        this._dayPopupLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._dayPopupBox.add_child(this._dayPopupLabel);
+        this._forecastSection.add_child(this._dayPopupBox);
+
         this._forecastSection.visible = this.show7Day !== false;
         this._container.add_child(this._forecastSection);
 
         // ·· Space weather section ··
         this._spaceWxSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-spacewx-section' });
         this._spaceWxSection.add_child(this._makeDivider());
-        this._spaceWxSection.add_child(
-            new St.Label({ text: 'Space Weather', style_class: 'simplewx-section-hdr' })
-        );
+
+        // Centered Space Weather label with:
+        let spaceWxHdr = new St.Label({
+            text: 'Space Weather',
+            style_class: 'simplewx-section-hdr',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        spaceWxHdr.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._spaceWxSection.add_child(spaceWxHdr);
 
         let spaceWxRow = new St.BoxLayout({
             vertical: false,
@@ -427,24 +496,65 @@ class SimpleWxDesklet extends Desklet.Desklet {
         // ·· Band conditions section ··
         this._bandSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-section' });
         this._bandSection.add_child(this._makeDivider());
-        this._bandSection.add_child(
-            new St.Label({ text: 'Band Conditions', style_class: 'simplewx-section-hdr' })
-        );
-        this._bandRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-band-row' });
+        let bandHdr = new St.Label({
+            text: 'Band Conditions',
+            style_class: 'simplewx-section-hdr',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        bandHdr.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._bandSection.add_child(bandHdr);
+        //-------------------------------------------------------------------------------------------
+        //----
+        this._bandRow = new St.BoxLayout({
+            vertical: false,
+            style_class: 'simplewx-band-row',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
         this._bandCells = {};
-        for (let band of ['80m', '40m', '20m', '15m', '10m', '6m']) {
-            let cell = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-cell' });
-            let nameLabel = new St.Label({ text: band, style_class: 'simplewx-band-name' });
-            let condLabel = new St.Label({ text: '?', style_class: 'simplewx-band-cond' });
+
+        // Band layout: 80m | 40m | 30/20m | 17/15m | 12/10m | 6m | 2m
+        // 160m omitted — MF data unavailable
+        const BAND_LAYOUT = [
+            { key: '80m', label: '80m' },
+            { key: '40m', label: '40m' },
+            { key: '30/20m', label: '30/20m' },
+            { key: '17/15m', label: '17/15m' },
+            { key: '12/10m', label: '12/10m' },
+            { key: '6m', label: '6m' },
+            { key: '2m', label: '2m' },
+        ];
+
+        for (let band of BAND_LAYOUT) {
+            let cell = new St.BoxLayout({
+                vertical: true,
+                style_class: 'simplewx-band-cell',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            let nameLabel = new St.Label({
+                text: band.label,
+                style_class: 'simplewx-band-name',
+                x_align: Clutter.ActorAlign.CENTER,
+                x_expand: true
+            });
+            let condLabel = new St.Label({
+                text: '?',
+                style_class: 'simplewx-band-cond',
+                x_align: Clutter.ActorAlign.CENTER,
+                x_expand: true
+            });
+            condLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
             cell.add_child(nameLabel);
             cell.add_child(condLabel);
-            this._bandCells[band] = condLabel;
+            this._bandCells[band.key] = condLabel;
             this._bandRow.add_child(cell);
         }
-        this._bandSection.add_child(this._bandRow);
+        this._bandSection.add_child(this._bandRow);        
+        //-------------------------------------------------------------------------------------------
         this._bandSection.visible = this.showBandConds !== false;
         this._container.add_child(this._bandSection);
-
+        //-------------------------------------------------------------------------------------------
         // ·· Migraine indicator section ··
         this._migraineSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-migraine-section' });
         this._migraineSection.add_child(this._makeDivider());
@@ -455,9 +565,19 @@ class SimpleWxDesklet extends Desklet.Desklet {
             x_align: Clutter.ActorAlign.CENTER,
             x_expand: true
         });
-        let mxHdr = new St.Label({ text: '⚡ Migraine Index', style_class: 'simplewx-section-hdr' });
-        mxHdr.clutter_text.ellipsize = imports.gi.Pango.EllipsizeMode.NONE;
+        let mxHdr = new St.Label({
+            text: '⚡ Migraine Index',
+            style_class: 'simplewx-section-hdr',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
+        mxHdr.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+
+        // ℹ button opens model explanation popup
+        let mxInfoBtn = new St.Button({ label: 'ℹ', style_class: 'simplewx-info-btn' });
+        mxInfoBtn.connect('clicked', () => this._toggleMxExplanation());
         mxHeaderRow.add_child(mxHdr);
+        mxHeaderRow.add_child(mxInfoBtn);
         this._migraineSection.add_child(mxHeaderRow);
 
         let mxRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-mx-row', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
@@ -468,12 +588,30 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._migraineSection.add_child(mxRow);
 
         // Factor breakdown row
-        this._mxFactorsLabel = new St.Label({ text: '', style_class: 'simplewx-mx-factors', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        this._mxFactorsLabel = new St.Label({
+            text: '',
+            style_class: 'simplewx-mx-factors',
+            x_align: Clutter.ActorAlign.CENTER,
+            x_expand: true
+        });
         this._mxFactorsLabel.clutter_text.line_wrap = true;
         this._mxFactorsLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._mxFactorsLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
         this._migraineSection.add_child(this._mxFactorsLabel);
         this._container.add_child(this._migraineSection);
 
+        // ·· Migraine model explanation popup ··
+        this._mxExplainBox = new St.BoxLayout({
+            vertical: true,
+            style_class: 'simplewx-popup simplewx-mx-explain',
+            visible: false
+        });
+        this._mxExplainLabel = new St.Label({ text: '', style_class: 'simplewx-popup-text' });
+        this._mxExplainLabel.clutter_text.line_wrap = true;
+        this._mxExplainLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._mxExplainLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._mxExplainBox.add_child(this._mxExplainLabel);
+        this._migraineSection.add_child(this._mxExplainBox);
 
         // ·· Attributions popup ··
         this._attrPopupBox = new St.BoxLayout({ vertical: true, style_class: 'simplewx-popup simplewx-attr-popup', visible: false });
@@ -571,19 +709,25 @@ class SimpleWxDesklet extends Desklet.Desklet {
             x_align: Clutter.ActorAlign.CENTER,
             x_expand: true
         });
+
         let copy = new St.Label({ text: 'Copyright 2026 - WD8TA  ', style_class: 'simplewx-footer-text' });
         let attrBtn = new St.Button({ label: 'Attributions', style_class: 'simplewx-footer-link' });
         attrBtn.connect('clicked', () => this._toggleAttributions());
-
-        let sep = new St.Label({ text: '  |  ', style_class: 'simplewx-footer-text' });
-
+        let sep1 = new St.Label({ text: '  |  ', style_class: 'simplewx-footer-text' });
         let discBtn = new St.Button({ label: 'Disclaimer', style_class: 'simplewx-footer-link' });
         discBtn.connect('clicked', () => this._toggleDisclaimer());
+        let sep2 = new St.Label({ text: '  |  ', style_class: 'simplewx-footer-text' });
+        let swxBtn = new St.Button({ label: 'Space Weather News', style_class: 'simplewx-footer-link' });
+        swxBtn.connect('clicked', () => {
+            Gio.AppInfo.launch_default_for_uri('https://spaceweathernews.com', null);
+        });
 
         row.add_child(copy);
         row.add_child(attrBtn);
-        row.add_child(sep);
+        row.add_child(sep1);
         row.add_child(discBtn);
+        row.add_child(sep2);
+        row.add_child(swxBtn);
 
         this._lastUpdatedLabel = new St.Label({
             text: '',
@@ -607,7 +751,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         return block;
     }
 
-    _makeDayCell() {
+/*     _makeDayCell() {
         let container = new St.BoxLayout({ vertical: true, style_class: 'simplewx-day-cell' });
         let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name' });
         let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon' });
@@ -618,7 +762,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         container.add_child(hiLoLabel);
         container.add_child(windLabel);
         return { container, dayLabel, icon, hiLoLabel, windLabel };
-    }
+    } */
 
     // ── Popups ───────────────────────────────────────────────
     _togglePopup() {
@@ -660,6 +804,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._forecastDailyUrl = null;
         this._obsStationsUrl = null;
         this._locationLabel.set_text(this._currentLocation.name);
+        this._updateLatLon();
         this._fetchPoints();
     }
 
@@ -689,9 +834,14 @@ class SimpleWxDesklet extends Desklet.Desklet {
     _geolocate() {
         this._httpGet(this._endpoint('geolocation'), (json) => {
             if (json.status === 'success') {
-                this._currentLocation = { name: `${json.city}, ${json.regionName}`, lat: json.lat, lon: json.lon };
+                this._currentLocation = {
+                    name: `${json.city}, ${json.regionName}`,
+                    lat: json.lat,
+                    lon: json.lon
+                };
                 this._usingGeolocation = true;
                 this._locationLabel.set_text(`📍 ${this._currentLocation.name}`);
+                this._updateLatLon();      // ← Feature 7
                 this._fetchPoints();
             } else throw new Error(json.message || 'ip-api failure');
         }, () => this._useDefaultFavorite());
@@ -702,6 +852,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         if (this._favorites.length === 0) { this._setError('No favorites configured'); return; }
         this._currentLocation = this._favorites[this._activeFavIndex];
         this._locationLabel.set_text(this._currentLocation.name);
+        this._updateLatLon();      // ← Feature 7   
         this._fetchPoints();
     }
 
@@ -722,6 +873,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
             this._fetchCurrentObservation();
             this._updateSunriseSunset();
             this._updateMoonDisplay();
+            this._updateLatLon();
+            this._fetchMUF();
         }, () => this._setError('NWS points lookup failed'));
     }
 
@@ -940,6 +1093,9 @@ class SimpleWxDesklet extends Desklet.Desklet {
             cell.icon.set_gicon(
                 Gio.icon_new_for_string(this._resolveIcon(pair.day.shortForecast, true))
             );
+            // ← Feature 3: store detailed forecast for popup
+            cell.detailedForecast = pair.day.detailedForecast ||
+                `${dayName}: ${pair.day.shortForecast}`;
         });
 
         // Update today's high/low in current conditions row
@@ -1091,7 +1247,9 @@ class SimpleWxDesklet extends Desklet.Desklet {
         
         this._fetchAurora();
 
-        // Schedule next space weather refresh
+        this._fetchMUF();          // ← refresh MUF on space wx cycle too
+
+        // Schedule next refresh
         if (this._spaceWxTimer) Mainloop.source_remove(this._spaceWxTimer);
         this._spaceWxTimer = Mainloop.timeout_add_seconds(SPACE_WX_SECS, () => {
             this._fetchSpaceWeather();
@@ -1148,7 +1306,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }, () => log('SimpleWx: Aurora forecast fetch failed'));
     }
     // ── Band conditions ──────────────────────────────────────
-    _updateBandConditions() {
+/*     _updateBandConditions() {
         let kp = this._currentKp, sfi = this._currentSfi;
         if (sfi === 0) return;
         const conditions = {
@@ -1166,7 +1324,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             lbl.set_text(cond);
             lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
         }
-    }
+    } */
 
     _cond80(kp) { return kp >= 5 ? 'Poor' : kp >= 3 ? 'Fair' : 'Good'; }
     _cond40(kp, sfi) { if (kp >= 5) return 'Poor'; if (kp >= 4) return 'Fair'; return sfi >= 100 && kp <= 2 ? 'Good' : sfi >= 80 ? 'Fair' : 'Poor'; }
@@ -1332,6 +1490,11 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._mxScoreLabel.set_text(`  (${score})`);
         this._mxScoreLabel.set_style(`color: ${indicator.color};`);
         this._mxFactorsLabel.set_text(factors.length > 0 ? factors.join('  ·  ') : 'No significant factors');
+        // Log the migraine score and contributing factors for debugging and model refinement
+        if (score !== this._lastLoggedScore) {
+            this._lastLoggedScore = score;
+            this._logMigraineScore(score, indicator.label, factors);
+        }
     }
 
     // ── Refresh scheduling ───────────────────────────────────
@@ -1361,6 +1524,265 @@ class SimpleWxDesklet extends Desklet.Desklet {
         if (this._refreshTimer) { Mainloop.source_remove(this._refreshTimer); this._refreshTimer = null; }
         if (this._spaceWxTimer) { Mainloop.source_remove(this._spaceWxTimer); this._spaceWxTimer = null; }
     }
+
+    //-----------------------------------------------------------------------------------
+    //---Late arrival APIs and utilities below — not needed for core functionality
+    //-----------------------------------------------------------------------------------
+    // ── [FEATURE 3] Day cell construction with click handler ──
+    _makeDayCell(index) {
+        let container = new St.BoxLayout({
+            vertical: true,
+            style_class: 'simplewx-day-cell',
+            reactive: true      // ← enables click events
+        });
+        let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        let hiLoLabel = new St.Label({ text: '--/--', style_class: 'simplewx-day-hilo', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        let windLabel = new St.Label({ text: '', style_class: 'simplewx-day-wind', x_align: Clutter.ActorAlign.CENTER, x_expand: true });
+        container.add_child(dayLabel);
+        container.add_child(icon);
+        container.add_child(hiLoLabel);
+        container.add_child(windLabel);
+
+        // Click handler — show detail popup for this day
+        container.connect('button-press-event', () => {
+            this._showDayPopup(index);
+            return true;
+        });
+
+        return { container, dayLabel, icon, hiLoLabel, windLabel, detailedForecast: '' };
+    }
+
+    // ── [FEATURE 3] Day popup toggle ──
+    _showDayPopup(index) {
+        let cell = this._dayCells[index];
+        if (!cell || !cell.detailedForecast) return;
+
+        let alreadyShowing = this._dayPopupBox.visible &&
+            this._currentDayPopupIndex === index;
+        if (alreadyShowing) {
+            this._dayPopupBox.visible = false;
+            this._currentDayPopupIndex = -1;
+            return;
+        }
+
+        this._dayPopupLabel.set_text(cell.detailedForecast);
+        this._dayPopupBox.visible = true;
+        this._currentDayPopupIndex = index;
+    }
+
+    // ── [FEATURE 2] MUF fetch ──
+    _fetchMUF() {
+        this._httpGet(this._endpoint('prop_muf'), (json) => {
+            log(`SimpleWx MUF data: ${JSON.stringify(json)}`);
+
+            // Try multiple field names — verify on first run
+            let muf = json.muf_de ||
+                json.MUF ||
+                json.muf ||
+                json.foF2_muf ||
+                null;
+
+            // Some APIs nest under a location key
+            if (!muf && json.boulder) muf = json.boulder.muf || json.boulder.MUF;
+            if (!muf && json.stations) {
+                let boulder = json.stations.find(s =>
+                    s.name && s.name.toLowerCase().includes('boulder')
+                );
+                if (boulder) muf = boulder.muf || boulder.MUF;
+            }
+
+            if (muf && !isNaN(parseFloat(muf))) {
+                let mufVal = Math.round(parseFloat(muf));
+                this._mufLabel.set_text(`MUF = ${mufVal}MHz (Boulder, CO USA)`);
+                // Color code: green ≥ 14MHz (20m open), yellow ≥ 7MHz, red < 7MHz
+                let color = mufVal >= 14 ? '#44cc44' : mufVal >= 7 ? '#cccc00' : '#ff4400';
+                this._mufLabel.set_style(`color: ${color};`);
+            } else {
+                this._mufLabel.set_text('MUF = No Report');
+                this._mufLabel.set_style('color: #888888;');
+            }
+        }, () => {
+            this._mufLabel.set_text('MUF = No Report');
+            this._mufLabel.set_style('color: #888888;');
+            log('SimpleWx: MUF fetch failed');
+        });
+    }
+
+    // ── [FEATURE 7] Update lat/lon display ──
+    _updateLatLon() {
+        if (!this._currentLocation || !this._latLonLabel) return;
+        let { lat, lon } = this._currentLocation;
+        let latStr = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'}`;
+        let lonStr = `${Math.abs(lon).toFixed(4)}°${lon >= 0 ? 'E' : 'W'}`;
+        this._latLonLabel.set_text(`${latStr}  ${lonStr}`);
+    }
+
+    // ── [FEATURE 1] Expanded band conditions ──
+    _updateBandConditions() {
+        let kp = this._currentKp;
+        let sfi = this._currentSfi;
+        if (sfi === 0) return;
+
+        // Use forecast Kp for aurora-sensitive bands
+        let effectiveKp = Math.max(kp, this._forecastKp || 0);
+
+        const conditions = {
+            '80m': this._cond80(kp),
+            '40m': this._cond40(kp, sfi),
+            '30/20m': this._condPair(
+                this._condMid(kp, sfi, 80, 100),
+                this._condMid(kp, sfi, 90, 120)
+            ),
+            '17/15m': this._condPair(
+                this._condHigh(kp, sfi, 100, 130),
+                this._condHigh(kp, sfi, 110, 150)
+            ),
+            '12/10m': this._condPair(
+                this._condHigh(kp, sfi, 120, 150),
+                this._condHigh(kp, sfi, 130, 160)
+            ),
+            '6m': this._condVhf(kp, sfi),
+            '2m': this._cond2m(effectiveKp, sfi),
+        };
+
+        const COLORS = {
+            'Good': '#44cc44',
+            'Fair': '#cccc00',
+            'Poor': '#ff4400',
+            'Aurora': '#aa44ff',
+            'Es?': '#44aaff',   // Sporadic-E possibility on 2m
+        };
+
+        for (let [band, cond] of Object.entries(conditions)) {
+            let lbl = this._bandCells[band];
+            if (!lbl) continue;
+            lbl.set_text(cond);
+            lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
+        }
+    }
+
+    // Paired cell — show worse of two conditions
+    _condPair(c1, c2) {
+        const rank = { 'Poor': 0, 'Fair': 1, 'Good': 2, 'Aurora': 3, 'Es?': 1 };
+        return (rank[c1] || 0) <= (rank[c2] || 0) ? c1 : c2;
+    }
+
+    // 2m VHF condition — derived from available data
+    _cond2m(effectiveKp, sfi) {
+        if (effectiveKp >= 5) return 'Aurora';       // aurora scatter
+        if (sfi >= 180) return 'Es?';           // possible Sporadic-E
+        return 'Poor';                                // troposcatter only — unpredictable
+    }
+
+    // ── [FEATURE 9] CSV logging ──
+    _ensureCsvExists() {
+        try {
+            let dir = Gio.File.new_for_path(`${this._metadata.path}/data`);
+            if (!dir.query_exists(null)) dir.make_directory(null);
+
+            let file = Gio.File.new_for_path(this._csvPath);
+            if (!file.query_exists(null)) {
+                let header = [
+                    'timestamp', 'location', 'migraine_score', 'migraine_level',
+                    'kp_index', 'forecast_kp', 'sfi', 'xray_class',
+                    'electron_flux', 'proton_flux', 'solar_wind_kmps',
+                    'pressure_inHg', 'pressure_trend',
+                    'temp_swing_F', 'wind_speed_mph',
+                    'moon_phase', 'moon_age_days', 'moon_illum_pct',
+                    'aurora_visible'
+                ].join(',') + '\n';
+                let [, etag] = file.replace_contents(
+                    new TextEncoder().encode(header),
+                    null, false,
+                    Gio.FileCreateFlags.NONE, null
+                );
+            }
+        } catch (e) {
+            log(`SimpleWx: CSV init failed: ${e}`);
+        }
+    }
+
+    _logMigraineScore(score, level, factors) {
+        try {
+            let now = new Date();
+            let ts = now.toISOString();
+            let loc = this._currentLocation ? this._currentLocation.name : 'Unknown';
+            let moon = this._moonPhaseName(this._moonAge);
+            let illum = Math.round(this._moonIllum * 100);
+            let trend = this._pressureTrend().symbol;
+            let press = this._pressureHistory.length > 0
+                ? this._pressureHistory[this._pressureHistory.length - 1].val.toFixed(2)
+                : '';
+
+            let row = [
+                ts,
+                `"${loc}"`,
+                score,
+                level,
+                this._currentKp.toFixed(1),
+                (this._forecastKp || 0).toFixed(1),
+                this._currentSfi,
+                this._xrayLabel ? (this._xrayLabel.get_text() || '') : '',
+                Math.round(this._currentElectronFlux),
+                this._currentProtonFlux.toFixed(3),
+                this._currentWindSpeed,  // terrestrial
+                press,
+                trend,
+                this._forecastTempSwing,
+                this._currentWindSpeed,
+                `"${moon}"`,
+                this._moonAge.toFixed(2),
+                illum,
+                this._auroraVisible ? '1' : '0'
+            ].join(',') + '\n';
+
+            let file = Gio.File.new_for_path(this._csvPath);
+            let stream = file.append_to(Gio.FileCreateFlags.NONE, null);
+            stream.write_all(new TextEncoder().encode(row), null);
+            stream.close(null);
+        } catch (e) {
+            log(`SimpleWx: CSV write failed: ${e}`);
+        }
+    }
+
+    // ── [FEATURE 10] Migraine explanation popup ──
+    _toggleMxExplanation() {
+        if (!this._mxExplainBox) return;
+        let visible = !this._mxExplainBox.visible;
+        this._mxExplainBox.visible = visible;
+        if (visible) {
+            this._mxExplainLabel.set_text(this._buildMxExplanation());
+        }
+    }
+
+    _buildMxExplanation() {
+        return [
+            '── How the Migraine Index Works ──',
+            '',
+            'The index scores environmental and space weather',
+            'factors associated with migraine triggers.',
+            'Scores are summed to produce the overall level.',
+            '',
+            `Pressure drop mild (>${MX.PRESSURE_DROP_MILD}" inHg): +${MX.SCORE_PRESSURE_MILD}`,
+            `Pressure drop sharp (>${MX.PRESSURE_DROP_SHARP}" inHg): +${MX.SCORE_PRESSURE_SHARP}`,
+            `K-index ≥ ${MX.KP_THRESHOLD_MILD} (Active): +${MX.SCORE_KP_MILD}`,
+            `K-index ≥ ${MX.KP_THRESHOLD_SEVERE} (Storm): +${MX.SCORE_KP_SEVERE}`,
+            `Electron flux ≥ ${MX.ELECTRON_ELEVATED}: +${MX.SCORE_ELECTRON}`,
+            `Proton flux ≥ ${MX.PROTON_ELEVATED} pfu: +${MX.SCORE_PROTON}`,
+            `Temp swing ≥ ${MX.TEMP_SWING}°F: +${MX.SCORE_TEMP_SWING}`,
+            `Wind ≥ ${MX.WIND_HIGH} mph: +${MX.SCORE_WIND}`,
+            `New Moon window (±${MX.MOON_NEW_WINDOW} days): +${MX.SCORE_MOON_NEW}`,
+            `Full Moon window (±${MX.MOON_FULL_WINDOW} days): +${MX.SCORE_MOON_FULL}`,
+            `Aurora visible at your latitude: +${MX.SCORE_AURORA}`,
+            '',
+            'Score 0-2: Low  |  3-5: Moderate',
+            'Score 6-8: Elevated  |  9+: High',
+            '',
+            '⚠ Not a medical device. See Disclaimer.'
+        ].join('\n');
+    }
+
 }
 
 function main(metadata, desklet_id) {

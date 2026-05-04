@@ -443,3 +443,45 @@
     font-size: 12px;
     color: #888888;
 }
+
+/* ── Lat/Lon display ── */
+.simplewx-latlon {
+    font-size: 9px;
+    color: #666666;
+    text-align: center;
+}
+
+/* ── MUF display ── */
+.simplewx-muf-row {
+    padding-top: 2px;
+}
+
+.simplewx-muf {
+    font-size: 11px;
+    color: #44cc44;
+    text-align: center;
+}
+
+/* ── Day detail popup ── */
+.simplewx-day-popup {
+    margin-top: 4px;
+}
+
+/* ── Migraine explanation popup ── */
+.simplewx-mx-explain {
+    margin-top: 4px;
+    max-width: 260px;
+}
+
+/* ── Day cell hover — hints clickability ── */
+.simplewx-day-cell:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+/* ── Band cell — wider for paired labels ── */
+.simplewx-band-cell {
+    min-width: 44px;
+    padding: 2px 2px;
+    spacing: 2px;
+}
