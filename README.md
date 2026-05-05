@@ -13,7 +13,7 @@ SimpleWx is a feature-rich, ham-radio-aware weather desklet for the **Cinnamon d
 
 ## Screenshots
 
-![SimpleWx Screenshot](simplewx-screenshot.png)
+![SimpleWx Screenshot](simplewx_screenshot.png)
 
 ---
 
