@@ -76,6 +76,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
     constructor(metadata, desklet_id) {
         super(metadata, desklet_id);
+        global.settings.set_int('desklet-decorations', 0);
         // Add Refresh to desklet right-click context menu
         this._menu.addAction('Refresh', () => {
             this._startWeather();
@@ -105,6 +106,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._currentElectronFlux = 0;
         this._currentProtonFlux = 0;
         this._currentWindSpeed = 0;  // terrestrial, mph
+        this._currentSolarWindSpeed = 0;
         this._forecastTempSwing = 0;
         this._moonAge = 0;   // days since last new moon
         this._moonIllum = 0;   // illumination 0-1
@@ -225,21 +227,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         );
     }
 
-/*     _applyBorder() {
-        if (this.showBorder) {
-            let size = Math.min(Math.max(parseInt(this.borderSize) || 1, 1), 5);
-            let radius = Math.min(Math.max(parseInt(this.borderRadius) || 4, 0), 16);
-            let color = this.borderColor || 'rgba(255,255,255,0.4)';
-            this._container.set_style(`
-            border: ${size}px solid ${color};
-            border-radius: ${radius}px;
-            padding: 10px;
-        `);
-        } else {
-            this._container.set_style('border: none; padding: 10px;');
-        }
-    } */
-
     _applyBorder() {
         if (!this._container) return;
 
@@ -250,7 +237,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
         // Tell Cinnamon's desklet manager to use no decoration on the actor
         // This is the same global setting bbcwx reads — we force it to 0 (none)
-        global.settings.set_int('desklet-decorations', 0);
+        //global.settings.set_int('desklet-decorations', 0);
 
         this._container.set_style_class_name('desklet');
 
@@ -278,7 +265,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._container.add_child(this._buildHeader());
 
         // ·· Nav row ··
-
         let navRow = new St.BoxLayout({ vertical: false, style_class: 'simplewx-nav-row' });
         this._prevBtn = new St.Button({ label: '◀', style_class: 'simplewx-nav-btn' });
         this._prevBtn.connect('clicked', () => this._cycleLocation(-1));
@@ -490,8 +476,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._spaceWxSection.add_child(spaceWxRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
-
-
 
         // ·· Band conditions section ··
         this._bandSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-section' });
@@ -750,19 +734,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         block.add_child(new St.Label({ text: title, style_class: 'simplewx-spacewx-hdr' }));
         return block;
     }
-
-/*     _makeDayCell() {
-        let container = new St.BoxLayout({ vertical: true, style_class: 'simplewx-day-cell' });
-        let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name' });
-        let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon' });
-        let hiLoLabel = new St.Label({ text: '--/--', style_class: 'simplewx-day-hilo' });
-        let windLabel = new St.Label({ text: '', style_class: 'simplewx-day-wind' });
-        container.add_child(dayLabel);
-        container.add_child(icon);
-        container.add_child(hiLoLabel);
-        container.add_child(windLabel);
-        return { container, dayLabel, icon, hiLoLabel, windLabel };
-    } */
 
     // ── Popups ───────────────────────────────────────────────
     _togglePopup() {
@@ -1177,6 +1148,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             );
             if (latest) {
                 let speed = Math.round(parseFloat(latest[2]));
+                this._currentSolarWindSpeed = speed;
                 this._solarWindLabel.set_text(`${speed} km/s`);
                 let color = speed < 400 ? '#44cc44' : speed < 600 ? '#cccc00' : speed < 800 ? '#ff8800' : '#ff2200';
                 this._solarWindLabel.set_style(`color: ${color}; font-weight: bold;`);
@@ -1305,26 +1277,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
 
         }, () => log('SimpleWx: Aurora forecast fetch failed'));
     }
-    // ── Band conditions ──────────────────────────────────────
-/*     _updateBandConditions() {
-        let kp = this._currentKp, sfi = this._currentSfi;
-        if (sfi === 0) return;
-        const conditions = {
-            '80m': this._cond80(kp),
-            '40m': this._cond40(kp, sfi),
-            '20m': this._condMid(kp, sfi, 90, 120),
-            '15m': this._condHigh(kp, sfi, 110, 150),
-            '10m': this._condHigh(kp, sfi, 130, 160),
-            '6m': this._condVhf(kp, sfi),
-        };
-        const COLORS = { 'Good': '#44cc44', 'Fair': '#cccc00', 'Poor': '#ff4400', 'Aurora': '#aa44ff' };
-        for (let [band, cond] of Object.entries(conditions)) {
-            let lbl = this._bandCells[band];
-            if (!lbl) continue;
-            lbl.set_text(cond);
-            lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
-        }
-    } */
 
     _cond80(kp) { return kp >= 5 ? 'Poor' : kp >= 3 ? 'Fair' : 'Good'; }
     _cond40(kp, sfi) { if (kp >= 5) return 'Poor'; if (kp >= 4) return 'Fair'; return sfi >= 100 && kp <= 2 ? 'Good' : sfi >= 80 ? 'Fair' : 'Poor'; }
@@ -1334,6 +1286,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         let effectiveKp = Math.max(kp, this._forecastKp || 0);
         if (effectiveKp >= 5) return 'Aurora';
         return sfi >= 150 ? 'Good' : sfi >= 120 ? 'Fair' : 'Poor';
+    }
 }
 
     // ── Icon resolution ──────────────────────────────────────
@@ -1730,7 +1683,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
                 press,
                 trend,
                 this._forecastTempSwing,
-                this._currentWindSpeed,
+                this._currentSolarWindSpeed,  // solar_wind_kmps column
                 `"${moon}"`,
                 this._moonAge.toFixed(2),
                 illum,
