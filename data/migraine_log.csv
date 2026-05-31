@@ -113,3 +113,14 @@ timestamp,location,migraine_score,migraine_level,kp_index,forecast_kp,sfi,xray_c
 2026-05-30T02:38:26.384Z,"Reynoldsburg, Ohio",4,Moderate,3.3,2.0,148,C1.0,17254,0.179,0,29.94,=,22,0,"Waxing Gibbous",13.52,98,0
 2026-05-30T03:08:26.271Z,"Reynoldsburg, Ohio",2,Low,3.3,3.3,148,B8.3,71,0.195,0,29.95,=,22,0,"Waxing Gibbous",13.54,98,0
 2026-05-30T03:23:26.278Z,"Reynoldsburg, Ohio",4,Moderate,3.3,3.3,148,B9.3,3918,0.190,1,29.96,=,22,1,"Waxing Gibbous",13.56,98,0
+2026-05-30T21:08:39.218Z,"Reynoldsburg, Ohio",6,Elevated,4.3,4.3,142,B8.8,34914,0.216,12,30.06,=,23,12,"Waxing Gibbous",14.29,100,0
+2026-05-31T00:15:37.395Z,"Unknown",2,Low,0.0,4.0,142,B8.0,0,0.000,0,,=,0,0,"New Moon",0.00,0,1
+2026-05-31T00:15:37.440Z,"Reynoldsburg, Ohio",4,Moderate,4.0,4.0,142,B8.0,0,0.251,0,,=,0,0,"New Moon",0.00,0,1
+2026-05-31T00:15:37.447Z,"Reynoldsburg, Ohio",6,Elevated,4.0,4.0,142,B8.0,27322,0.251,0,,=,0,0,"New Moon",0.00,0,1
+2026-05-31T00:15:38.037Z,"Reynoldsburg, Ohio",7,Elevated,4.0,4.0,142,B8.0,27322,0.251,0,,=,22,0,"Waxing Gibbous",14.44,100,1
+2026-05-31T00:19:29.664Z,"Reynoldsburg, Ohio",3,Moderate,4.0,4.0,142,B7.9,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T00:19:29.678Z,"Reynoldsburg, Ohio",5,Moderate,4.0,4.0,142,B7.9,31347,0.192,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T00:19:30.017Z,"Reynoldsburg, Ohio",6,Elevated,4.0,4.0,142,B7.9,31347,0.192,9,,=,22,9,"Waxing Gibbous",14.44,100,0
+2026-05-31T00:21:48.669Z,"Reynoldsburg, Ohio",3,Moderate,4.0,4.0,142,B7.9,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T00:21:48.682Z,"Reynoldsburg, Ohio",5,Moderate,4.0,4.0,142,B7.9,31347,0.192,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T00:21:49.268Z,"Reynoldsburg, Ohio",6,Elevated,4.0,4.0,142,B7.9,31347,0.192,0,,=,22,477,"Waxing Gibbous",14.44,100,0
