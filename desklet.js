@@ -1500,8 +1500,29 @@ class SimpleWxDesklet extends Desklet.Desklet {
     }
 
     // ── Refresh scheduling ───────────────────────────────────
+    // _scheduleRefresh() {
+    //     if (this._refreshTimer) Mainloop.source_remove(this._refreshTimer);
+    //     let seconds = Math.max(REFRESH_FLOOR_S, (this.refreshInterval || 30) * 60);
+    //     this._refreshTimer = Mainloop.timeout_add_seconds(seconds, () => {
+    //         if (this.useGeolocation && this._usingGeolocation) {
+    //             this._geolocate();
+    //         } else {
+    //             this._fetchCurrentConditions();
+    //             this._fetchDailyForecast();
+    //             this._fetchCurrentObservation();
+    //             this._updateSunriseSunset();
+    //         }
+    //         return false;
+    //     });
+    // }
+
     _scheduleRefresh() {
-        if (this._refreshTimer) Mainloop.source_remove(this._refreshTimer);
+        // Guard against invalid timer id
+        if (this._refreshTimer !== null && this._refreshTimer > 0) {
+            Mainloop.source_remove(this._refreshTimer);
+        }
+        this._refreshTimer = null;
+        
         let seconds = Math.max(REFRESH_FLOOR_S, (this.refreshInterval || 30) * 60);
         this._refreshTimer = Mainloop.timeout_add_seconds(seconds, () => {
             if (this.useGeolocation && this._usingGeolocation) {
