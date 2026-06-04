@@ -107,6 +107,12 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._currentWindSpeed = 0;  // terrestrial, mph
         this._currentSolarWindSpeed = 0;
         this._forecastTempSwing = 0;
+        //HamQSL solar data
+        this._isDaytime = true;   // track day/night for band conditions
+        this._hamqslTimer = null;   // dedicated hourly timer
+        this._currentSunspots = 0;
+        this._currentAindex = 0;
+        // Moon phase tracking for migraine model
         this._moonAge = 0;   // days since last new moon
         this._moonIllum = 0;   // illumination 0-1
         this._auroraVisible = false; // aurora visible at user latitude
@@ -481,6 +487,20 @@ class SimpleWxDesklet extends Desklet.Desklet {
         auroraBlock.add_child(this._auroraLabel);
         auroraBlock.add_child(this._auroraVisLabel);
 
+        //HamQSL solar data blocks
+        let ssBlock = this._makeSpaceBlock('Sunspots');
+        this._sunspotsLabel = new St.Label({ text: '--', style_class: 'simplewx-sunspots' });
+        ssBlock.add_child(this._sunspotsLabel);
+
+        let aBlock = this._makeSpaceBlock('A-index');
+        this._aIndexLabel = new St.Label({ text: '--', style_class: 'simplewx-aindex' });
+        aBlock.add_child(this._aIndexLabel);
+
+        let bzBlock = this._makeSpaceBlock('Bz');
+        this._bzLabel = new St.Label({ text: '--', style_class: 'simplewx-bz' });
+        bzBlock.add_child(this._bzLabel);
+        //
+
         spaceWxRow.add_child(kBlock);
         spaceWxRow.add_child(sfiBlock);
         spaceWxRow.add_child(xrayBlock);
@@ -488,6 +508,11 @@ class SimpleWxDesklet extends Desklet.Desklet {
         spaceWxRow.add_child(eBlock);
         spaceWxRow.add_child(pBlock);
         spaceWxRow.add_child(auroraBlock);
+        //HamQSL blocks
+        spaceWxRow.add_child(ssBlock);    // ← new
+        spaceWxRow.add_child(aBlock);     // ← new
+        spaceWxRow.add_child(bzBlock);
+        //
         this._spaceWxSection.add_child(spaceWxRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
@@ -1053,6 +1078,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
     _updateDisplay(period) {
         let { temperature, temperatureUnit, shortForecast,
             isDaytime, windSpeed, windDirection } = period;
+        this._isDaytime = isDaytime;
         let [temp, unit] = this._convertTemp(temperature, temperatureUnit);
         this._tempLabel.set_text(`${temp}°${unit}`);
         this._condLabel.set_text(shortForecast);
@@ -1248,8 +1274,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }, () => log('SimpleWx: Proton flux fetch failed'));
 
         this._fetchAurora();
-
         this._fetchMUF();          // ← refresh MUF on space wx cycle too
+        this._fetchHamQSL();
 
         // Schedule next refresh
         if (this._spaceWxTimer) Mainloop.source_remove(this._spaceWxTimer);
@@ -1546,6 +1572,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
     on_desklet_removed() {
         if (this._refreshTimer) { Mainloop.source_remove(this._refreshTimer); this._refreshTimer = null; }
         if (this._spaceWxTimer) { Mainloop.source_remove(this._spaceWxTimer); this._spaceWxTimer = null; }
+        if (this._hamqslTimer) { Mainloop.source_remove(this._hamqslTimer); this._hamqslTimer = null; }
     }
 
     //-----------------------------------------------------------------------------------
@@ -1810,78 +1837,192 @@ class SimpleWxDesklet extends Desklet.Desklet {
     //V11: Revsion block.  Adding support for calling HamQSL API to get MUF data, and adding a new label to display it.  Also adding a new column to the CSV log for MUF, and including MUF in the migraine score calculation as a potential factor (low MUF could contribute to higher score).
     // Note: HamQSL's solarxml API is a simple XML feed, so we'll do basic regex parsing without adding an XML library dependency.
     //
+    // ── HamQSL XML Integration ───────────────────────────────
+    _fetchHamQSL() {
+        this._httpGetText(this._endpoint('hamqsl'), (xml) => {
+            // Debug on first run — remove after confirming field names
+            log(`SimpleWx HamQSL: ${xml.substring(0, 1500)}`);
+            this._processHamQSL(xml);
+            this._scheduleHamQSL();
+        }, () => {
+            log('SimpleWx: HamQSL fetch failed');
+            this._scheduleHamQSL();
+        });
+    }
+
+    _scheduleHamQSL() {
+        if (this._hamqslTimer) Mainloop.source_remove(this._hamqslTimer);
+        // Respect N0NBH's request — fetch at most once per hour
+        this._hamqslTimer = Mainloop.timeout_add_seconds(3600, () => {
+            this._fetchHamQSL();
+            return false;
+        });
+    }
+
+    _processHamQSL(xml) {
+        // ·· Simple field extraction ··
+        let sunspots = this._parseHamQSLValue(xml, 'sunspots');
+        let aindex = this._parseHamQSLValue(xml, 'aindex');
+        let geofield = this._parseHamQSLValue(xml, 'geomagfield');
+        let snr = this._parseHamQSLValue(xml, 'signalnoise');
+        let bz = this._parseHamQSLValue(xml, 'magneticfield');
+        let auroraPct = this._parseHamQSLValue(xml, 'aurora');
+        let auroraLat = this._parseHamQSLValue(xml, 'latdegree');
+
+        // ·· Update sunspot display ··
+        if (sunspots) {
+            this._currentSunspots = parseInt(sunspots) || 0;
+            this._sunspotsLabel.set_text(sunspots);
+            // Color: green > 100 (active sun), yellow 50-100, red < 50
+            let ss = parseInt(sunspots) || 0;
+            let color = ss >= 100 ? '#44cc44' : ss >= 50 ? '#cccc00' : '#ff8800';
+            this._sunspotsLabel.set_style(`color: ${color}; font-weight: bold;`);
+        }
+
+        // ·· Update A-index display ··
+        if (aindex) {
+            this._currentAindex = parseInt(aindex) || 0;
+            this._aIndexLabel.set_text(aindex);
+            // A-index: green < 10 (quiet), yellow 10-29, orange 30-49, red >= 50
+            let ai = parseInt(aindex) || 0;
+            let color = ai < 10 ? '#44cc44'
+                : ai < 30 ? '#cccc00'
+                    : ai < 50 ? '#ff8800'
+                        : '#ff2200';
+            this._aIndexLabel.set_style(`color: ${color}; font-weight: bold;`);
+        }
+
+        // ·· Bz (magneticfield) ··
+        if (bz) {
+            let bzVal = parseFloat(bz);
+            this._bzLabel.set_text(`${bzVal > 0 ? '+' : ''}${bzVal.toFixed(1)}`);
+            // Bz color: green = northward (stable), red = strongly southward (storm)
+            let color = bzVal >= 0 ? '#44cc44'
+                : bzVal >= -5 ? '#cccc00'
+                    : bzVal >= -10 ? '#ff8800'
+                        : '#ff2200';
+            this._bzLabel.set_style(`color: ${color}; font-weight: bold;`);
+        }
+
+        // ·· Aurora probability % and boundary from hamqsl ··
+        if (auroraPct && auroraLat) {
+            let pct = parseInt(auroraPct) || 0;
+            let lat = parseFloat(auroraLat) || 90;
+            let userLat = this._currentLocation ? this._currentLocation.lat : 90;
+            this._auroraVisible = userLat >= lat;
+
+            // Update aurora display with hamqsl data
+            this._auroraVisLabel.set_text(
+                this._auroraVisible
+                    ? `Visible! ${pct}%`
+                    : `Above ${lat.toFixed(1)}°N`
+            );
+            let style = this._auroraVisible
+                ? 'color: #aa44ff; font-weight: bold;'
+                : 'color: #888888;';
+            this._auroraVisLabel.set_style(style);
+        }
+
+        // ·· Authoritative band conditions ··
+        this._updateBandConditionsFromHamQSL(xml);
+    }
+
     _parseHamQSLValue(xml, tagName) {
         let match = xml.match(new RegExp(`<${tagName}>([^<]+)</${tagName}>`));
         return match ? match[1].trim() : null;
     }
 
     _parseHamQSLBand(xml, bandName, time) {
+        // Escape special chars in band name for regex
+        let safeName = bandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         let match = xml.match(
-            new RegExp(`<band name="${bandName}" time="${time}">([^<]+)</band>`)
+            new RegExp(`<band name="${safeName}" time="${time}">([^<]+)</band>`)
         );
         return match ? match[1].trim() : null;
     }
 
-    _parseCalculatedVhfCondition(xml, tagName, location) {
-        let match = xml.match(new RegExp(`<${tagName} location="${location}">([^<]+)</${tagName}>`));
+    _parseHamQSLVHF(xml, phenomenonName, location) {
+        let safeName = phenomenonName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let safeLoc = location.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let match = xml.match(
+            new RegExp(`<phenomenon name="${safeName}" location="${safeLoc}">([^<]+)</phenomenon>`)
+        );
         return match ? match[1].trim() : null;
     }
 
-    _fetchHamQSL() {
-        // Use raw text fetch, not JSON parse
+    _updateBandConditionsFromHamQSL(xml) {
+        let time = this._isDaytime ? 'day' : 'night';
+
+        // HF bands — authoritative from calculatedconditions
+        const HF_MAP = {
+            '80m': this._parseHamQSLBand(xml, '80m-40m', time),
+            '40m': this._parseHamQSLBand(xml, '80m-40m', time),
+            '30/20m': this._parseHamQSLBand(xml, '30m-20m', time),
+            '17/15m': this._parseHamQSLBand(xml, '17m-15m', time),
+            '12/10m': this._parseHamQSLBand(xml, '12m-10m', time),
+        };
+
+        // VHF bands — from calculatedvhfconditions
+        let auroraCond = this._parseHamQSLVHF(xml, 'vhf-aurora', 'northern_hemi');
+        let eSkipNA = this._parseHamQSLVHF(xml, 'E-Skip', 'north_america');
+
+        // 6m: aurora takes priority, then E-Skip, then Poor
+        let cond6m = 'Poor';
+        if (auroraCond && auroraCond !== 'Band Closed') {
+            cond6m = 'Aurora';
+        } else if (eSkipNA && eSkipNA !== 'Band Closed') {
+            cond6m = 'Es';   // Sporadic-E open
+        }
+
+        // 2m: aurora only
+        let cond2m = 'Poor';
+        if (auroraCond && auroraCond !== 'Band Closed') {
+            cond2m = 'Aurora';
+        }
+
+        const BAND_MAP = { ...HF_MAP, '6m': cond6m, '2m': cond2m };
+
+        const COLORS = {
+            'Good': '#44cc44',
+            'Fair': '#cccc00',
+            'Poor': '#ff4400',
+            'Aurora': '#aa44ff',
+            'Es': '#44aaff',
+            'Band Closed': '#ff2200',
+            'No Signal': '#666666',
+        };
+
+        let anyUpdated = false;
+        for (let [band, cond] of Object.entries(BAND_MAP)) {
+            if (!cond) continue;
+            let lbl = this._bandCells[band];
+            if (!lbl) continue;
+            lbl.set_text(cond);
+            lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
+            anyUpdated = true;
+        }
+
+        if (!anyUpdated) this._updateBandConditions();
+    }
+
+    // ── Raw text HTTP helper (for XML responses) ─────────────
+    _httpGetText(url, onSuccess, onError) {
+        if (!url) { if (onError) onError(new Error('empty URL')); return; }
         let session = new Soup.Session();
-        let message = Soup.Message.new('GET',
-            'https://www.hamqsl.com/solarxml.php');
+        let message = Soup.Message.new('GET', url);
         message.request_headers.append('User-Agent', USER_AGENT);
         session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null,
             (session, result) => {
                 try {
                     let bytes = session.send_and_read_finish(result);
-                    let xml = new TextDecoder().decode(bytes.get_data());
-                    this._processHamQSL(xml);
+                    let text = new TextDecoder().decode(bytes.get_data());
+                    onSuccess(text);
                 } catch (e) {
-                    log(`SimpleWx: HamQSL fetch failed: ${e}`);
+                    log(`SimpleWx: HTTP text error for ${url}: ${e}`);
+                    if (onError) onError(e);
                 }
             }
         );
-    }
-
-    _processHamQSL(xml) {
-        let sfi = this._parseHamQSLValue(xml, 'solarflux');
-        let kindex = this._parseHamQSLValue(xml, 'kindex');
-        let xray = this._parseHamQSLValue(xml, 'xray');
-        let sunspots = this._parseHamQSLValue(xml, 'sunspots');
-        let aurora = this._parseHamQSLValue(xml, 'aurora');
-        let geofield = this._parseHamQSLValue(xml, 'geomagfield');
-        let snr = this._parseHamQSLValue(xml, 'signalnoise');
-        let magnetic = this._parseHamQSLValue(xml, 'magneticfield');
-        let latdegree = this._parseHamQSLValue(xml, 'latdegree');
-        let protonflux = this._parseHamQSLValue(xml, 'protonflux');
-        let electronflux = this._parseHamQSLValue(xml, 'electronflux');
-
-        // Band conditions — day and night
-        let bands = {
-            '80m-40m': {
-                day: this._parseHamQSLBand(xml, '80m-40m', 'day'),
-                night: this._parseHamQSLBand(xml, '80m-40m', 'night')
-            },
-            '30m-20m': {
-                day: this._parseHamQSLBand(xml, '30m-20m', 'day'),
-                night: this._parseHamQSLBand(xml, '30m-20m', 'night')
-            },
-            '17m-15m': {
-                day: this._parseHamQSLBand(xml, '17m-15m', 'day'),
-                night: this._parseHamQSLBand(xml, '17m-15m', 'night')
-            },
-            '12m-10m': {
-                day: this._parseHamQSLBand(xml, '12m-10m', 'day'),
-                night: this._parseHamQSLBand(xml, '12m-10m', 'night')
-            }
-        };
-
-        log(`SimpleWx HamQSL: SFI=${sfi} K=${kindex} 
-         Aurora=${aurora}% Geo=${geofield} SNR=${snr}`);
-        // Update UI here...
     }
 
     //

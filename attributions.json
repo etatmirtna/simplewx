@@ -36,6 +36,12 @@
                     "author": "NOAA SWPC",
                     "source": "https://www.swpc.noaa.gov",
                     "license": "Public Domain"
+                },
+                {
+                    "name": "HamQSL Solar-Terrestrial Data",
+                    "author": "N0NBH / HamQSL.com",
+                    "source": "https://www.hamqsl.com/solarxml.php",
+                    "license": "Free for non-commercial use with attribution"
                 }
             ]
         }
