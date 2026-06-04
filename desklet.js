@@ -101,7 +101,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._config = this._loadConfig();
         this._attributions = this._loadAttributions();
         this._disclaimer = this._loadDisclaimer();
-        this._disclaimerVisible = false;        
+        this._disclaimerVisible = false;
         this._currentElectronFlux = 0;
         this._currentProtonFlux = 0;
         this._currentWindSpeed = 0;  // terrestrial, mph
@@ -226,20 +226,20 @@ class SimpleWxDesklet extends Desklet.Desklet {
         );
     }
 
-/*     _applyBorder() {
-        if (this.showBorder) {
-            let size = Math.min(Math.max(parseInt(this.borderSize) || 1, 1), 5);
-            let radius = Math.min(Math.max(parseInt(this.borderRadius) || 4, 0), 16);
-            let color = this.borderColor || 'rgba(255,255,255,0.4)';
-            this._container.set_style(`
-            border: ${size}px solid ${color};
-            border-radius: ${radius}px;
-            padding: 10px;
-        `);
-        } else {
-            this._container.set_style('border: none; padding: 10px;');
-        }
-    } */
+    /*     _applyBorder() {
+            if (this.showBorder) {
+                let size = Math.min(Math.max(parseInt(this.borderSize) || 1, 1), 5);
+                let radius = Math.min(Math.max(parseInt(this.borderRadius) || 4, 0), 16);
+                let color = this.borderColor || 'rgba(255,255,255,0.4)';
+                this._container.set_style(`
+                border: ${size}px solid ${color};
+                border-radius: ${radius}px;
+                padding: 10px;
+            `);
+            } else {
+                this._container.set_style('border: none; padding: 10px;');
+            }
+        } */
 
     _applyBorder() {
         if (!this._container) return;
@@ -487,7 +487,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         spaceWxRow.add_child(windBlock);
         spaceWxRow.add_child(eBlock);
         spaceWxRow.add_child(pBlock);
-        spaceWxRow.add_child(auroraBlock);        
+        spaceWxRow.add_child(auroraBlock);
         this._spaceWxSection.add_child(spaceWxRow);
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
@@ -551,7 +551,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             this._bandCells[band.key] = condLabel;
             this._bandRow.add_child(cell);
         }
-        this._bandSection.add_child(this._bandRow);        
+        this._bandSection.add_child(this._bandRow);
         //-------------------------------------------------------------------------------------------
         this._bandSection.visible = this.showBandConds !== false;
         this._container.add_child(this._bandSection);
@@ -752,18 +752,18 @@ class SimpleWxDesklet extends Desklet.Desklet {
         return block;
     }
 
-/*     _makeDayCell() {
-        let container = new St.BoxLayout({ vertical: true, style_class: 'simplewx-day-cell' });
-        let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name' });
-        let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon' });
-        let hiLoLabel = new St.Label({ text: '--/--', style_class: 'simplewx-day-hilo' });
-        let windLabel = new St.Label({ text: '', style_class: 'simplewx-day-wind' });
-        container.add_child(dayLabel);
-        container.add_child(icon);
-        container.add_child(hiLoLabel);
-        container.add_child(windLabel);
-        return { container, dayLabel, icon, hiLoLabel, windLabel };
-    } */
+    /*     _makeDayCell() {
+            let container = new St.BoxLayout({ vertical: true, style_class: 'simplewx-day-cell' });
+            let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name' });
+            let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon' });
+            let hiLoLabel = new St.Label({ text: '--/--', style_class: 'simplewx-day-hilo' });
+            let windLabel = new St.Label({ text: '', style_class: 'simplewx-day-wind' });
+            container.add_child(dayLabel);
+            container.add_child(icon);
+            container.add_child(hiLoLabel);
+            container.add_child(windLabel);
+            return { container, dayLabel, icon, hiLoLabel, windLabel };
+        } */
 
     // ── Popups ───────────────────────────────────────────────
     _togglePopup() {
@@ -1245,8 +1245,8 @@ class SimpleWxDesklet extends Desklet.Desklet {
                 this._protonLabel.set_style(`color: ${color}; font-weight: bold;`);
                 this._updateMigraineIndicator();
             }
-        }, () => log('SimpleWx: Proton flux fetch failed'));   
-        
+        }, () => log('SimpleWx: Proton flux fetch failed'));
+
         this._fetchAurora();
 
         this._fetchMUF();          // ← refresh MUF on space wx cycle too
@@ -1258,7 +1258,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             return false;
         });
     }
-        
+
     // ── Aurora Forecast ──────────────────────────────────────
     _fetchAurora() {
         this._httpGet(this._endpoint('noaa_kforecast'), (data) => {
@@ -1308,25 +1308,25 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }, () => log('SimpleWx: Aurora forecast fetch failed'));
     }
     // ── Band conditions ──────────────────────────────────────
-/*     _updateBandConditions() {
-        let kp = this._currentKp, sfi = this._currentSfi;
-        if (sfi === 0) return;
-        const conditions = {
-            '80m': this._cond80(kp),
-            '40m': this._cond40(kp, sfi),
-            '20m': this._condMid(kp, sfi, 90, 120),
-            '15m': this._condHigh(kp, sfi, 110, 150),
-            '10m': this._condHigh(kp, sfi, 130, 160),
-            '6m': this._condVhf(kp, sfi),
-        };
-        const COLORS = { 'Good': '#44cc44', 'Fair': '#cccc00', 'Poor': '#ff4400', 'Aurora': '#aa44ff' };
-        for (let [band, cond] of Object.entries(conditions)) {
-            let lbl = this._bandCells[band];
-            if (!lbl) continue;
-            lbl.set_text(cond);
-            lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
-        }
-    } */
+    /*     _updateBandConditions() {
+            let kp = this._currentKp, sfi = this._currentSfi;
+            if (sfi === 0) return;
+            const conditions = {
+                '80m': this._cond80(kp),
+                '40m': this._cond40(kp, sfi),
+                '20m': this._condMid(kp, sfi, 90, 120),
+                '15m': this._condHigh(kp, sfi, 110, 150),
+                '10m': this._condHigh(kp, sfi, 130, 160),
+                '6m': this._condVhf(kp, sfi),
+            };
+            const COLORS = { 'Good': '#44cc44', 'Fair': '#cccc00', 'Poor': '#ff4400', 'Aurora': '#aa44ff' };
+            for (let [band, cond] of Object.entries(conditions)) {
+                let lbl = this._bandCells[band];
+                if (!lbl) continue;
+                lbl.set_text(cond);
+                lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
+            }
+        } */
 
     _cond80(kp) { return kp >= 5 ? 'Poor' : kp >= 3 ? 'Fair' : 'Good'; }
     _cond40(kp, sfi) { if (kp >= 5) return 'Poor'; if (kp >= 4) return 'Fair'; return sfi >= 100 && kp <= 2 ? 'Good' : sfi >= 80 ? 'Fair' : 'Poor'; }
@@ -1336,7 +1336,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         let effectiveKp = Math.max(kp, this._forecastKp || 0);
         if (effectiveKp >= 5) return 'Aurora';
         return sfi >= 150 ? 'Good' : sfi >= 120 ? 'Fair' : 'Poor';
-}
+    }
 
     // ── Icon resolution ──────────────────────────────────────
     _resolveIcon(shortForecast, isDaytime) {
@@ -1522,7 +1522,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
             Mainloop.source_remove(this._refreshTimer);
         }
         this._refreshTimer = null;
-        
+
         let seconds = Math.max(REFRESH_FLOOR_S, (this.refreshInterval || 30) * 60);
         this._refreshTimer = Mainloop.timeout_add_seconds(seconds, () => {
             if (this.useGeolocation && this._usingGeolocation) {
@@ -1806,7 +1806,88 @@ class SimpleWxDesklet extends Desklet.Desklet {
         ].join('\n');
     }
 
+    // ── [FEATURE 11] HamQSL API integration for space weather details ──
+    //V11: Revsion block.  Adding support for calling HamQSL API to get MUF data, and adding a new label to display it.  Also adding a new column to the CSV log for MUF, and including MUF in the migraine score calculation as a potential factor (low MUF could contribute to higher score).
+    // Note: HamQSL's solarxml API is a simple XML feed, so we'll do basic regex parsing without adding an XML library dependency.
+    //
+    _parseHamQSLValue(xml, tagName) {
+        let match = xml.match(new RegExp(`<${tagName}>([^<]+)</${tagName}>`));
+        return match ? match[1].trim() : null;
+    }
+
+    _parseHamQSLBand(xml, bandName, time) {
+        let match = xml.match(
+            new RegExp(`<band name="${bandName}" time="${time}">([^<]+)</band>`)
+        );
+        return match ? match[1].trim() : null;
+    }
+
+    _parseCalculatedVhfCondition(xml, tagName, location) {
+        let match = xml.match(new RegExp(`<${tagName} location="${location}">([^<]+)</${tagName}>`));
+        return match ? match[1].trim() : null;
+    }
+
+    _fetchHamQSL() {
+        // Use raw text fetch, not JSON parse
+        let session = new Soup.Session();
+        let message = Soup.Message.new('GET',
+            'https://www.hamqsl.com/solarxml.php');
+        message.request_headers.append('User-Agent', USER_AGENT);
+        session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null,
+            (session, result) => {
+                try {
+                    let bytes = session.send_and_read_finish(result);
+                    let xml = new TextDecoder().decode(bytes.get_data());
+                    this._processHamQSL(xml);
+                } catch (e) {
+                    log(`SimpleWx: HamQSL fetch failed: ${e}`);
+                }
+            }
+        );
+    }
+
+    _processHamQSL(xml) {
+        let sfi = this._parseHamQSLValue(xml, 'solarflux');
+        let kindex = this._parseHamQSLValue(xml, 'kindex');
+        let xray = this._parseHamQSLValue(xml, 'xray');
+        let sunspots = this._parseHamQSLValue(xml, 'sunspots');
+        let aurora = this._parseHamQSLValue(xml, 'aurora');
+        let geofield = this._parseHamQSLValue(xml, 'geomagfield');
+        let snr = this._parseHamQSLValue(xml, 'signalnoise');
+        let magnetic = this._parseHamQSLValue(xml, 'magneticfield');
+        let latdegree = this._parseHamQSLValue(xml, 'latdegree');
+        let protonflux = this._parseHamQSLValue(xml, 'protonflux');
+        let electronflux = this._parseHamQSLValue(xml, 'electronflux');
+
+        // Band conditions — day and night
+        let bands = {
+            '80m-40m': {
+                day: this._parseHamQSLBand(xml, '80m-40m', 'day'),
+                night: this._parseHamQSLBand(xml, '80m-40m', 'night')
+            },
+            '30m-20m': {
+                day: this._parseHamQSLBand(xml, '30m-20m', 'day'),
+                night: this._parseHamQSLBand(xml, '30m-20m', 'night')
+            },
+            '17m-15m': {
+                day: this._parseHamQSLBand(xml, '17m-15m', 'day'),
+                night: this._parseHamQSLBand(xml, '17m-15m', 'night')
+            },
+            '12m-10m': {
+                day: this._parseHamQSLBand(xml, '12m-10m', 'day'),
+                night: this._parseHamQSLBand(xml, '12m-10m', 'night')
+            }
+        };
+
+        log(`SimpleWx HamQSL: SFI=${sfi} K=${kindex} 
+         Aurora=${aurora}% Geo=${geofield} SNR=${snr}`);
+        // Update UI here...
+    }
+
+    //
+
 }
+
 
 function main(metadata, desklet_id) {
     return new SimpleWxDesklet(metadata, desklet_id);

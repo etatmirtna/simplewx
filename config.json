@@ -9,6 +9,7 @@
         "noaa_electrons": "https://services.swpc.noaa.gov/json/goes/primary/differential-electrons-1-day.json",
         "noaa_protons": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json",
         "noaa_kforecast": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
+        "hamqsl": "https://www.hamqsl.com/solarxml.php",
         "prop_muf": ""
     }
 }

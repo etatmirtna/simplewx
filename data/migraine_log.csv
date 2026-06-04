@@ -128,3 +128,17 @@ timestamp,location,migraine_score,migraine_level,kp_index,forecast_kp,sfi,xray_c
 2026-05-31T03:17:40.572Z,"Reynoldsburg, Ohio",1,Low,3.7,3.7,142,C1.1,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
 2026-05-31T03:17:40.601Z,"Reynoldsburg, Ohio",3,Moderate,3.7,3.7,142,C1.1,46897,0.205,0,,=,0,0,"New Moon",0.00,0,0
 2026-05-31T03:17:41.741Z,"Reynoldsburg, Ohio",4,Moderate,3.7,3.7,142,C1.1,46897,0.205,9,,=,22,489,"Waxing Gibbous",14.56,100,0
+2026-05-31T16:33:33.156Z,"Reynoldsburg, Ohio",1,Low,0.0,2.7,0,--,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T16:33:33.181Z,"Reynoldsburg, Ohio",3,Moderate,2.7,2.7,142,B6.9,25478,0.218,0,,=,0,0,"New Moon",0.00,0,0
+2026-05-31T16:33:33.401Z,"Reynoldsburg, Ohio",4,Moderate,2.7,2.7,142,B6.9,25478,0.218,0,,=,21,509,"Full Moon",15.12,100,0
+2026-05-31T18:38:12.428Z,"Reynoldsburg, Ohio",6,Elevated,2.0,2.0,142,C1.3,29417,0.251,5,30.06,↓,21,494,"Full Moon",15.19,100,0
+2026-05-31T23:53:25.703Z,"Reynoldsburg, Ohio",4,Moderate,1.7,3.7,136,B7.0,12215,0.200,3,29.96,=,23,457,"Full Moon",15.42,100,0
+2026-06-01T20:41:05.622Z,"Reynoldsburg, Ohio",3,Moderate,3.3,2.0,136,B6.5,22675,0.212,5,30.06,=,22,399,"Full Moon",16.29,97,0
+2026-06-03T15:55:07.299Z,"Reynoldsburg, Ohio",1,Low,1.7,1.7,146,--,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-06-03T15:55:07.310Z,"Reynoldsburg, Ohio",3,Moderate,1.7,1.7,146,C1.2,34512,0.194,0,,=,0,0,"New Moon",0.00,0,0
+2026-06-03T15:55:07.587Z,"Reynoldsburg, Ohio",2,Low,1.7,1.7,146,C1.2,34512,0.194,0,,=,0,437,"Waning Gibbous",18.09,88,0
+2026-06-03T15:55:07.663Z,"Reynoldsburg, Ohio",3,Moderate,1.7,1.7,146,C1.2,34512,0.194,0,,=,23,437,"Waning Gibbous",18.09,88,0
+2026-06-03T17:55:12.539Z,"Reynoldsburg, Ohio",5,Moderate,1.7,3.0,146,C1.5,35437,0.202,3,30.33,↓,22,433,"Waning Gibbous",18.17,87,0
+2026-06-03T23:55:27.860Z,"Reynoldsburg, Ohio",3,Moderate,2.3,3.3,147,C4.2,7623,0.205,3,30.24,=,22,433,"Waning Gibbous",18.42,86,0
+2026-06-04T05:10:07.550Z,"Reynoldsburg, Ohio",1,Low,2.7,3.0,147,C1.1,700,0.202,1,30.23,=,22,405,"Waning Gibbous",18.63,84,0
+2026-06-04T05:25:08.434Z,"Reynoldsburg, Ohio",3,Moderate,2.7,3.0,147,C1.0,11199,0.180,1,30.23,=,22,410,"Waning Gibbous",18.63,84,0
