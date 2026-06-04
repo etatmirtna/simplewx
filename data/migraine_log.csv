@@ -159,3 +159,8 @@ timestamp,location,migraine_score,migraine_level,kp_index,forecast_kp,sfi,xray_c
 2026-06-04T20:29:31.326Z,"Reynoldsburg, Ohio",3,Moderate,1.0,6.7,147,C1.4,15165,0.240,0,,=,0,0,"New Moon",0.00,0,0
 2026-06-04T20:29:31.602Z,"Reynoldsburg, Ohio",2,Low,1.0,6.7,147,C1.4,15165,0.240,0,,=,0,430,"Waning Gibbous",19.28,79,0
 2026-06-04T20:29:31.707Z,"Reynoldsburg, Ohio",3,Moderate,1.0,6.7,147,C1.4,15165,0.240,6,,=,22,430,"Waning Gibbous",19.28,79,0
+2026-06-04T20:38:28.991Z,"Reynoldsburg, Ohio",1,Low,1.0,6.7,147,C1.5,0,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-06-04T20:38:29.068Z,"Reynoldsburg, Ohio",3,Moderate,1.0,6.7,147,C1.5,15035,0.000,0,,=,0,0,"New Moon",0.00,0,0
+2026-06-04T20:38:29.581Z,"Reynoldsburg, Ohio",2,Low,1.0,6.7,147,C1.5,15035,0.233,0,,=,0,417,"Waning Gibbous",19.29,79,0
+2026-06-04T20:38:29.703Z,"Reynoldsburg, Ohio",3,Moderate,1.0,6.7,147,C1.5,15035,0.233,0,,=,22,417,"Waning Gibbous",19.29,79,0
+2026-06-04T22:23:29.378Z,"Reynoldsburg, Ohio",5,Moderate,0.7,5.7,148,C1.1,17083,0.220,7,30.11,↓,22,421,"Waning Gibbous",19.35,78,0
