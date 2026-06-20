@@ -11,7 +11,7 @@ const Clutter = imports.gi.Clutter;
 //
 // ── Migraine indicator weights ───────────────────────────
 // Adjust these based on your personal experience over time
-const MX = {
+/*const MX = {
     PRESSURE_DROP_MILD: 0.03,   // inHg — mild drop threshold
     PRESSURE_DROP_SHARP: 0.10,   // inHg — sharp drop threshold
     SCORE_PRESSURE_MILD: 2,
@@ -20,7 +20,7 @@ const MX = {
     KP_THRESHOLD_SEVERE: 6,
     SCORE_KP_MILD: 2,
     SCORE_KP_SEVERE: 3,      // cumulative with mild
-    ELECTRON_ELEVATED: 1000,   // pfu — calibrate from observation
+    ELECTRON_ELEVATED: 100000,   // pfu — calibrate from observation
     PROTON_ELEVATED: 10,      // pfu — calibrate from observation
     SCORE_ELECTRON: 2,
     SCORE_PROTON: 2,
@@ -34,7 +34,7 @@ const MX = {
     SCORE_MOON_NEW: 1,
     SCORE_MOON_FULL: 1,
     SCORE_AURORA: 1,     // aurora visible at user latitude
-};
+};*/
 
 const USER_AGENT = 'SimpleWx/5.0 simplewx@wd8ta';
 const REFRESH_FLOOR_S = 600;
@@ -101,6 +101,7 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._config = this._loadConfig();
         this._attributions = this._loadAttributions();
         this._disclaimer = this._loadDisclaimer();
+        this._mx = this._loadMigraineConfig();
         this._disclaimerVisible = false;
         this._currentElectronFlux = 0;
         this._currentProtonFlux = 0;
@@ -172,6 +173,76 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }
     }
 
+    _loadMigraineConfig() {
+        const DEFAULTS = {
+            PRESSURE_DROP_MILD: 0.03,
+            PRESSURE_DROP_SHARP: 0.10,
+            SCORE_PRESSURE_MILD: 2,
+            SCORE_PRESSURE_SHARP: 3,
+            KP_THRESHOLD_MILD: 4,
+            KP_THRESHOLD_SEVERE: 6,
+            SCORE_KP_MILD: 2,
+            SCORE_KP_SEVERE: 3,
+            ELECTRON_ELEVATED: 100000,
+            PROTON_ELEVATED: 10,
+            SCORE_ELECTRON: 2,
+            SCORE_PROTON: 2,
+            TEMP_SWING: 10,
+            SCORE_TEMP_SWING: 1,
+            WIND_HIGH: 20,
+            SCORE_WIND: 1,
+            MOON_NEW_WINDOW: 1.5,
+            MOON_FULL_WINDOW: 1.5,
+            SCORE_MOON_NEW: 1,
+            SCORE_MOON_FULL: 1,
+            SCORE_AURORA: 1,
+        };
+
+        // Maps your lowercase JSON keys to the uppercase property names
+        // used throughout the scoring logic
+        const KEY_MAP = {
+            pressure_drop_mild: 'PRESSURE_DROP_MILD',
+            pressure_drop_sharp: 'PRESSURE_DROP_SHARP',
+            score_pressure_mild: 'SCORE_PRESSURE_MILD',
+            score_pressure_sharp: 'SCORE_PRESSURE_SHARP',
+            kp_threshold_mild: 'KP_THRESHOLD_MILD',
+            kp_threshold_severe: 'KP_THRESHOLD_SEVERE',
+            score_kp_mild: 'SCORE_KP_MILD',
+            score_kp_severe: 'SCORE_KP_SEVERE',
+            electron_elevated: 'ELECTRON_ELEVATED',
+            proton_elevated: 'PROTON_ELEVATED',
+            score_electron: 'SCORE_ELECTRON',
+            score_proton: 'SCORE_PROTON',
+            temp_swing: 'TEMP_SWING',
+            score_temp_swing: 'SCORE_TEMP_SWING',
+            wind_high: 'WIND_HIGH',
+            score_wind: 'SCORE_WIND',
+            moon_new_window: 'MOON_NEW_WINDOW',
+            moon_full_window: 'MOON_FULL_WINDOW',
+            score_moon_new: 'SCORE_MOON_NEW',
+            score_moon_full: 'SCORE_MOON_FULL',
+            score_aurora: 'SCORE_AURORA',
+        };
+
+        try {
+            let file = Gio.File.new_for_path(`${this._metadata.path}/migraine.json`);
+            let [, contents] = file.load_contents(null);
+            let loaded = JSON.parse(new TextDecoder().decode(contents));
+
+            let merged = Object.assign({}, DEFAULTS);
+            for (let [jsonKey, mxKey] of Object.entries(KEY_MAP)) {
+                if (loaded[jsonKey] !== undefined) {
+                    merged[mxKey] = loaded[jsonKey];
+                }
+            }
+            log(`SimpleWx: migraine.json loaded successfully`);
+            return merged;
+        } catch (e) {
+            log(`SimpleWx: Failed to load migraine.json, using defaults: ${e}`);
+            return DEFAULTS;
+        }
+    }
+
     _endpoint(key) {
         return (this._config.endpoints || {})[key] || '';
     }
@@ -231,21 +302,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
             Math.max(0, this._favorites.length - 1)
         );
     }
-
-    /*     _applyBorder() {
-            if (this.showBorder) {
-                let size = Math.min(Math.max(parseInt(this.borderSize) || 1, 1), 5);
-                let radius = Math.min(Math.max(parseInt(this.borderRadius) || 4, 0), 16);
-                let color = this.borderColor || 'rgba(255,255,255,0.4)';
-                this._container.set_style(`
-                border: ${size}px solid ${color};
-                border-radius: ${radius}px;
-                padding: 10px;
-            `);
-            } else {
-                this._container.set_style('border: none; padding: 10px;');
-            }
-        } */
 
     _applyBorder() {
         if (!this._container) return;
@@ -517,8 +573,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         this._spaceWxSection.visible = this.showSpaceWx !== false;
         this._container.add_child(this._spaceWxSection);
 
-
-
         // ·· Band conditions section ··
         this._bandSection = new St.BoxLayout({ vertical: true, style_class: 'simplewx-band-section' });
         this._bandSection.add_child(this._makeDivider());
@@ -776,19 +830,6 @@ class SimpleWxDesklet extends Desklet.Desklet {
         block.add_child(new St.Label({ text: title, style_class: 'simplewx-spacewx-hdr' }));
         return block;
     }
-
-    /*     _makeDayCell() {
-            let container = new St.BoxLayout({ vertical: true, style_class: 'simplewx-day-cell' });
-            let dayLabel = new St.Label({ text: '---', style_class: 'simplewx-day-name' });
-            let icon = new St.Icon({ icon_size: 32, style_class: 'simplewx-day-icon' });
-            let hiLoLabel = new St.Label({ text: '--/--', style_class: 'simplewx-day-hilo' });
-            let windLabel = new St.Label({ text: '', style_class: 'simplewx-day-wind' });
-            container.add_child(dayLabel);
-            container.add_child(icon);
-            container.add_child(hiLoLabel);
-            container.add_child(windLabel);
-            return { container, dayLabel, icon, hiLoLabel, windLabel };
-        } */
 
     // ── Popups ───────────────────────────────────────────────
     _togglePopup() {
@@ -1233,9 +1274,9 @@ class SimpleWxDesklet extends Desklet.Desklet {
                     ? `${(flux / 1000).toFixed(1)}k`
                     : String(Math.round(flux));
                 this._electronLabel.set_text(displayVal);
-                let color = flux < MX.ELECTRON_ELEVATED
+                let color = flux < this._mx.ELECTRON_ELEVATED
                     ? '#44cc44'
-                    : flux < MX.ELECTRON_ELEVATED * 10
+                    : flux < this._mx.ELECTRON_ELEVATED * 10
                         ? '#cccc00'
                         : '#ff4400';
                 this._electronLabel.set_style(`color: ${color}; font-weight: bold;`);
@@ -1334,26 +1375,9 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }, () => log('SimpleWx: Aurora forecast fetch failed'));
     }
     // ── Band conditions ──────────────────────────────────────
-    /*     _updateBandConditions() {
-            let kp = this._currentKp, sfi = this._currentSfi;
-            if (sfi === 0) return;
-            const conditions = {
-                '80m': this._cond80(kp),
-                '40m': this._cond40(kp, sfi),
-                '20m': this._condMid(kp, sfi, 90, 120),
-                '15m': this._condHigh(kp, sfi, 110, 150),
-                '10m': this._condHigh(kp, sfi, 130, 160),
-                '6m': this._condVhf(kp, sfi),
-            };
-            const COLORS = { 'Good': '#44cc44', 'Fair': '#cccc00', 'Poor': '#ff4400', 'Aurora': '#aa44ff' };
-            for (let [band, cond] of Object.entries(conditions)) {
-                let lbl = this._bandCells[band];
-                if (!lbl) continue;
-                lbl.set_text(cond);
-                lbl.set_style(`color: ${COLORS[cond] || '#888888'}; font-weight: bold;`);
-            }
-        } */
 
+
+    
     _cond80(kp) { return kp >= 5 ? 'Poor' : kp >= 3 ? 'Fair' : 'Good'; }
     _cond40(kp, sfi) { if (kp >= 5) return 'Poor'; if (kp >= 4) return 'Fair'; return sfi >= 100 && kp <= 2 ? 'Good' : sfi >= 80 ? 'Fair' : 'Poor'; }
     _condMid(kp, sfi, f, g) { if (kp >= 4) return 'Poor'; return sfi >= g ? 'Good' : sfi >= f ? 'Fair' : 'Poor'; }
@@ -1445,64 +1469,64 @@ class SimpleWxDesklet extends Desklet.Desklet {
         let pressureDelta = this._pressureHistory.length >= 2
             ? this._pressureHistory[0].val - this._pressureHistory[this._pressureHistory.length - 1].val
             : 0;
-        if (pressureDelta > MX.PRESSURE_DROP_SHARP) {
-            score += MX.SCORE_PRESSURE_MILD + MX.SCORE_PRESSURE_SHARP;
+        if (pressureDelta > this._mx.PRESSURE_DROP_SHARP) {
+            score += this._mx.SCORE_PRESSURE_MILD + this._mx.SCORE_PRESSURE_SHARP;
             factors.push(`Pressure ↓ sharply`);
-        } else if (pressureDelta > MX.PRESSURE_DROP_MILD) {
-            score += MX.SCORE_PRESSURE_MILD;
+        } else if (pressureDelta > this._mx.PRESSURE_DROP_MILD) {
+            score += this._mx.SCORE_PRESSURE_MILD;
             factors.push(`Pressure ↓`);
         }
 
         // ·· K-index ··
-        if (this._currentKp >= MX.KP_THRESHOLD_SEVERE) {
-            score += MX.SCORE_KP_MILD + MX.SCORE_KP_SEVERE;
+        if (this._currentKp >= this._mx.KP_THRESHOLD_SEVERE) {
+            score += this._mx.SCORE_KP_MILD + this._mx.SCORE_KP_SEVERE;
             factors.push(`Kp ${this._currentKp.toFixed(1)} (severe storm)`);
-        } else if (this._currentKp >= MX.KP_THRESHOLD_MILD) {
-            score += MX.SCORE_KP_MILD;
+        } else if (this._currentKp >= this._mx.KP_THRESHOLD_MILD) {
+            score += this._mx.SCORE_KP_MILD;
             factors.push(`Kp ${this._currentKp.toFixed(1)} (active)`);
         }
 
         // ·· Electron flux ··
-        if (this._currentElectronFlux >= MX.ELECTRON_ELEVATED) {
-            score += MX.SCORE_ELECTRON;
+        if (this._currentElectronFlux >= this._mx.ELECTRON_ELEVATED) {
+            score += this._mx.SCORE_ELECTRON;
             factors.push(`e⁻ flux elevated`);
         }
 
         // ·· Proton flux ··
-        if (this._currentProtonFlux >= MX.PROTON_ELEVATED) {
-            score += MX.SCORE_PROTON;
+        if (this._currentProtonFlux >= this._mx.PROTON_ELEVATED) {
+            score += this._mx.SCORE_PROTON;
             factors.push(`p⁺ flux elevated`);
         }
 
         // ·· Terrestrial wind ··
-        if (this._currentWindSpeed >= MX.WIND_HIGH) {
-            score += MX.SCORE_WIND;
+        if (this._currentWindSpeed >= this._mx.WIND_HIGH) {
+            score += this._mx.SCORE_WIND;
             factors.push(`Wind ${this._currentWindSpeed} mph`);
         }
 
         // ·· Moon phase ··
         let moonAge = this._moonAge;
-        let nearNew = moonAge < MX.MOON_NEW_WINDOW || moonAge > (29.53059 - MX.MOON_NEW_WINDOW);
-        let nearFull = Math.abs(moonAge - 14.77) < MX.MOON_FULL_WINDOW;
+        let nearNew = moonAge < this._mx.MOON_NEW_WINDOW || moonAge > (29.53059 - this._mx.MOON_NEW_WINDOW);
+        let nearFull = Math.abs(moonAge - 14.77) < this._mx.MOON_FULL_WINDOW;
 
         if (nearNew) {
-            score += MX.SCORE_MOON_NEW;
+            score += this._mx.SCORE_MOON_NEW;
             factors.push('New Moon window');
         }
         if (nearFull) {
-            score += MX.SCORE_MOON_FULL;
+            score += this._mx.SCORE_MOON_FULL;
             factors.push('Full Moon window');
         }
 
         // ·· Aurora visibility ··
         if (this._auroraVisible) {
-            score += MX.SCORE_AURORA;
+            score += this._mx.SCORE_AURORA;
             factors.push('Aurora at your latitude');
         }
 
         // ·· Temperature swing ··
-        if (this._forecastTempSwing >= MX.TEMP_SWING) {
-            score += MX.SCORE_TEMP_SWING;
+        if (this._forecastTempSwing >= this._mx.TEMP_SWING) {
+            score += this._mx.SCORE_TEMP_SWING;
             factors.push(`Temp swing ${this._forecastTempSwing}°`);
         }
 
@@ -1814,17 +1838,17 @@ class SimpleWxDesklet extends Desklet.Desklet {
             'factors associated with migraine triggers.',
             'Scores are summed to produce the overall level.',
             '',
-            `Pressure drop mild (>${MX.PRESSURE_DROP_MILD}" inHg): +${MX.SCORE_PRESSURE_MILD}`,
-            `Pressure drop sharp (>${MX.PRESSURE_DROP_SHARP}" inHg): +${MX.SCORE_PRESSURE_SHARP}`,
-            `K-index ≥ ${MX.KP_THRESHOLD_MILD} (Active): +${MX.SCORE_KP_MILD}`,
-            `K-index ≥ ${MX.KP_THRESHOLD_SEVERE} (Storm): +${MX.SCORE_KP_SEVERE}`,
-            `Electron flux ≥ ${MX.ELECTRON_ELEVATED}: +${MX.SCORE_ELECTRON}`,
-            `Proton flux ≥ ${MX.PROTON_ELEVATED} pfu: +${MX.SCORE_PROTON}`,
-            `Temp swing ≥ ${MX.TEMP_SWING}°F: +${MX.SCORE_TEMP_SWING}`,
-            `Wind ≥ ${MX.WIND_HIGH} mph: +${MX.SCORE_WIND}`,
-            `New Moon window (±${MX.MOON_NEW_WINDOW} days): +${MX.SCORE_MOON_NEW}`,
-            `Full Moon window (±${MX.MOON_FULL_WINDOW} days): +${MX.SCORE_MOON_FULL}`,
-            `Aurora visible at your latitude: +${MX.SCORE_AURORA}`,
+            `Pressure drop mild (>${this._mx.PRESSURE_DROP_MILD}" inHg): +${this._mx.SCORE_PRESSURE_MILD}`,
+            `Pressure drop sharp (>${this._mx.PRESSURE_DROP_SHARP}" inHg): +${this._mx.SCORE_PRESSURE_SHARP}`,
+            `K-index ≥ ${this._mx.KP_THRESHOLD_MILD} (Active): +${this._mx.SCORE_KP_MILD}`,
+            `K-index ≥ ${this._mx.KP_THRESHOLD_SEVERE} (Storm): +${this._mx.SCORE_KP_SEVERE}`,
+            `Electron flux ≥ ${this._mx.ELECTRON_ELEVATED}: +${this._mx.SCORE_ELECTRON}`,
+            `Proton flux ≥ ${this._mx.PROTON_ELEVATED} pfu: +${this._mx.SCORE_PROTON}`,
+            `Temp swing ≥ ${this._mx.TEMP_SWING}°F: +${this._mx.SCORE_TEMP_SWING}`,
+            `Wind ≥ ${this._mx.WIND_HIGH} mph: +${this._mx.SCORE_WIND}`,
+            `New Moon window (±${this._mx.MOON_NEW_WINDOW} days): +${this._mx.SCORE_MOON_NEW}`,
+            `Full Moon window (±${this._mx.MOON_FULL_WINDOW} days): +${this._mx.SCORE_MOON_FULL}`,
+            `Aurora visible at your latitude: +${this._mx.SCORE_AURORA}`,
             '',
             'Score 0-2: Low  |  3-5: Moderate',
             'Score 6-8: Elevated  |  9+: High',

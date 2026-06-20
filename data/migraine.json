@@ -1,0 +1,23 @@
+{
+    "pressure_drop_mild": 0.03,
+    "pressure_drop_sharp": 0.10,
+    "score_pressure_mild": 2,
+    "score_pressure_sharp": 3,
+    "kp_threshold_mild": 4,
+    "kp_threshold_severe": 6,
+    "score_kp_mild": 2,
+    "score_kp_severe": 3,
+    "electron_elevated": 1000,
+    "proton_elevated": 10,
+    "score_electron": 2,
+    "score_proton": 2,
+    "temp_swing": 10,
+    "score_temp_swing": 1,
+    "wind_high": 20,
+    "score_wind": 1,
+    "moon_new_window": 1.5,
+    "moon_full_window": 1.5,
+    "score_moon_new": 1,
+    "score_moon_full": 1,
+    "score_aurora": 1
+}
