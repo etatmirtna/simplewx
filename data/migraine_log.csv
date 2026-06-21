@@ -258,3 +258,9 @@ timestamp,location,migraine_score,migraine_level,kp_index,forecast_kp,sfi,xray_c
 2026-06-20T00:26:09.568Z,"Reynoldsburg, Ohio",1,Low,0.0,0.0,0,--,0,0.187,0,,=,0,0,"New Moon",0.00,0,0
 2026-06-20T00:26:09.896Z,"Reynoldsburg, Ohio",0,Low,2.0,2.0,111,B5.8,12506,0.187,0,,=,0,398,"Waxing Crescent",4.92,25,0
 2026-06-20T00:26:10.068Z,"Reynoldsburg, Ohio",1,Low,2.0,2.0,111,B5.8,12506,0.187,10,,=,21,398,"Waxing Crescent",4.92,25,0
+2026-06-20T10:41:13.278Z,"Reynoldsburg, Ohio",3,Moderate,2.0,1.7,111,B5.1,31507,0.191,2,29.96,↓,22,394,"Waxing Crescent",5.33,29,0
+2026-06-20T11:11:13.268Z,"Reynoldsburg, Ohio",1,Low,2.0,1.7,111,B7.5,27631,0.215,2,29.97,=,22,384,"Waxing Crescent",5.35,29,0
+2026-06-20T16:57:13.527Z,"Reynoldsburg, Ohio",3,Moderate,2.0,1.0,111,B4.1,26385,0.195,12,29.96,↓,22,372,"Waxing Crescent",5.60,32,0
+2026-06-20T19:27:19.345Z,"Reynoldsburg, Ohio",1,Low,1.7,1.7,111,B4.9,22313,0.207,13,29.93,=,23,395,"Waxing Crescent",5.71,33,0
+2026-06-20T20:27:20.644Z,"Reynoldsburg, Ohio",3,Moderate,1.7,1.7,111,B6.4,34771,0.196,13,29.91,↓,23,377,"Waxing Crescent",5.75,33,0
+2026-06-20T22:41:13.242Z,"Reynoldsburg, Ohio",1,Low,1.7,2.7,113,C1.3,23692,0.218,12,29.89,=,23,393,"Waxing Crescent",5.83,34,0

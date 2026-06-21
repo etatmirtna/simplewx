@@ -7,7 +7,7 @@
     "kp_threshold_severe": 6,
     "score_kp_mild": 2,
     "score_kp_severe": 3,
-    "electron_elevated": 1000,
+    "electron_elevated": 100000,
     "proton_elevated": 10,
     "score_electron": 2,
     "score_proton": 2,
