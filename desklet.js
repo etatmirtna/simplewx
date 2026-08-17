@@ -1240,11 +1240,19 @@ class SimpleWxDesklet extends Desklet.Desklet {
         }, () => log('SimpleWx: X-ray fetch failed'));
 
         this._httpGet(this._endpoint('noaa_wind'), (data) => {
-            let latest = [...data].reverse().find(r =>
-                Array.isArray(r) && r.length >= 3 && !isNaN(parseFloat(r[2]))
-            );
+            // NOAA's rtsw_wind_1m.json (replaced deprecated plasma-*.json, removed
+            // 2026-04-30 per SWPC Service Change Notice 26-21) interleaves records
+            // from multiple spacecraft (e.g. SOLAR1, ACE). Only "active" records
+            // reflect the satellite SWPC currently treats as authoritative, and
+            // "speed" was renamed to "proton_speed". Take the most recent active
+            // reading rather than assuming array order.
+            let latest = Array.isArray(data) ? data.reduce((best, r) => {
+                if (!r || r.active !== true || isNaN(parseFloat(r.proton_speed))) return best;
+                if (!best || r.time_tag > best.time_tag) return r;
+                return best;
+            }, null) : null;
             if (latest) {
-                let speed = Math.round(parseFloat(latest[2]));
+                let speed = Math.round(parseFloat(latest.proton_speed));
                 this._currentSolarWindSpeed = speed;
                 this._solarWindLabel.set_text(`${speed} km/s`);
                 let color = speed < 400 ? '#44cc44' : speed < 600 ? '#cccc00' : speed < 800 ? '#ff8800' : '#ff2200';

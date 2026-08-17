@@ -5,7 +5,7 @@
         "noaa_kindex":   "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json",
         "noaa_flux":     "https://services.swpc.noaa.gov/products/summary/10cm-flux.json",
         "noaa_xray":     "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json",
-        "noaa_wind":     "https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json",
+        "noaa_wind":     "https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json",
         "noaa_electrons": "https://services.swpc.noaa.gov/json/goes/primary/differential-electrons-1-day.json",
         "noaa_protons": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json",
         "noaa_kforecast": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
